@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "nanobanana": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "nanobanana-mcp-server"
+      ],
+      "env": {}
+    }
+  }
+}

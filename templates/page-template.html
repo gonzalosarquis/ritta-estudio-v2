@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════╗
+  ║  RITTA ESTUDIO — PAGE TEMPLATE               ║
+  ║  Copiar este archivo para crear nuevas        ║
+  ║  páginas con el mismo sistema de diseño.      ║
+  ║                                              ║
+  ║  Buscar TODO: para personalizar              ║
+  ╚══════════════════════════════════════════════╝
+
+  SECCIONES DISPONIBLES:
+  ─────────────────────
+  §A  Hero estándar (con imagen lateral, sin imagen, o solo texto)
+  §B  Hero compacto (para páginas internas)
+  §C  Contenido de texto largo
+  §D  Grid de tarjetas
+  §E  CTA de cierre
+  §F  Header y Footer (siempre presentes)
+
+  INSTRUCCIONES:
+  ─────────────
+  1. Copiar este archivo con el nombre de la página (ej: proyectos.html)
+  2. Reemplazar todos los TODO: con tu contenido
+  3. Eliminar las secciones que no necesites
+  4. Las imágenes .img-ph son placeholders — reemplazar con <img> reales
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- TODO: Actualizar título y descripción -->
+  <meta name="description" content="TODO: Descripción de la página">
+  <title>TODO: Título de la página — Ritta Estudio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#F4F0EC',
+            ink:   '#0A0A0A',
+            muted: '#6B6560',
+          },
+          fontFamily: {
+            sans: ['Manrope', 'Arial', 'sans-serif'],
+          },
+          maxWidth: { site: '1200px' },
+        }
+      }
+    }
+  </script>
+
+  <!-- ═══════════════════════════════════════
+       SHARED STYLES (no modificar)
+       Copiar exactamente desde index.html
+  ═══════════════════════════════════════ -->
+  <style>
+    /* Tokens */
+    :root {
+      --bg:          #F4F0EC;
+      --ink:         #0A0A0A;
+      --white:       #FFFFFF;
+      --muted:       rgba(10,10,10,0.45);
+      --border:      rgba(10,10,10,0.12);
+      --radius-pill: 30px;
+      --nav-h:       56px;
+      --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; font-family: 'Manrope', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); color: var(--ink); overflow-x: hidden; margin: 0; }
+
+    /* Typography */
+    .t-hero    { font-size: clamp(46px,9.5vw,119px); font-weight:800; line-height:0.93; letter-spacing:-0.045em; text-transform:uppercase; }
+    .t-section { font-size: clamp(30px,4.5vw,64px);  font-weight:700; line-height:1.0;  letter-spacing:-0.035em; text-transform:uppercase; }
+    .t-label   { font-size:11px;  font-weight:500; letter-spacing:0.12em; text-transform:uppercase; }
+    .t-body    { font-size:13px;  line-height:1.75; font-weight:400; }
+
+    /* Header */
+    #site-header { position:fixed; top:0; left:0; right:0; z-index:100; height:var(--nav-h); background:var(--bg); border-bottom:1px solid var(--border); transition:transform .38s var(--ease-out); will-change:transform; }
+    #site-header.scrolled-down { transform:translateY(-100%); }
+
+    /* Nav links */
+    .nav-link { font-size:11.5px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink); text-decoration:none; position:relative; padding-bottom:2px; opacity:.75; transition:opacity .2s ease; }
+    .nav-link::after { content:''; position:absolute; bottom:0; left:0; width:0; height:1px; background:var(--ink); transition:width .28s var(--ease-out); }
+    .nav-link:hover { opacity:1; }
+    .nav-link:hover::after { width:100%; }
+
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; gap:6px; border-radius:var(--radius-pill); padding:11px 26px; font-size:11px; font-weight:500; letter-spacing:0.11em; text-transform:uppercase; cursor:pointer; text-decoration:none; border:1px solid var(--ink); transition:background-color .22s ease, color .22s ease; line-height:1; }
+    .btn:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+    .btn-outline { background:transparent; color:var(--ink); }
+    .btn-outline:hover { background:var(--ink); color:var(--white); }
+    .btn-solid { background:var(--ink); color:var(--white); }
+    .btn-solid:hover { background:transparent; color:var(--ink); }
+
+    /* Hamburger */
+    .hb-line { display:block; width:22px; height:1.5px; background:var(--ink); border-radius:2px; transition:transform .3s ease, opacity .3s ease; }
+
+    /* Mobile menu */
+    #mobile-menu { position:fixed; inset:0; z-index:200; background:var(--bg); display:flex; flex-direction:column; padding:0 32px 40px; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+    #mobile-menu.open { opacity:1; pointer-events:all; }
+    .mobile-nav-link { font-size:clamp(32px,8vw,52px); font-weight:800; letter-spacing:-0.03em; text-transform:uppercase; color:var(--ink); text-decoration:none; line-height:1; opacity:.85; transition:opacity .2s ease; }
+    .mobile-nav-link:hover { opacity:1; }
+
+    /* Reveal animation */
+    .reveal { opacity:0; transform:translateY(28px); transition:opacity .65s var(--ease-out), transform .65s var(--ease-out); }
+    .reveal.in-view { opacity:1; transform:translateY(0); }
+    .reveal-d1 { transition-delay:.08s; }
+    .reveal-d2 { transition-delay:.17s; }
+    .reveal-d3 { transition-delay:.26s; }
+    .reveal-d4 { transition-delay:.35s; }
+
+    /* Placeholder images */
+    .img-ph { background:linear-gradient(160deg,#DDD5C9 0%,#C9C0B5 50%,#B8AFA4 100%); position:relative; overflow:hidden; }
+    .img-ph::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(-45deg,transparent 0,transparent 48px,rgba(255,255,255,.04) 48px,rgba(255,255,255,.04) 96px); }
+    .img-ph-alt  { background:linear-gradient(140deg,#C8BFBA 0%,#B5ABA5 60%,#A89E98 100%); }
+    .img-ph-dark { background:linear-gradient(160deg,#BEB6AE 0%,#A8A09A 60%,#9A9290 100%); }
+
+    /* Project cards */
+    .project-card { position:relative; overflow:hidden; border:1px solid var(--border); display:block; cursor:pointer; }
+    .project-card:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+    .project-card .card-img { display:block; width:100%; aspect-ratio:4/3; transition:transform .6s var(--ease-out); }
+    .project-card:hover .card-img { transform:scale(1.04); }
+    .card-overlay { position:absolute; inset:0; background:rgba(10,10,10,0); transition:background .35s ease; display:flex; align-items:flex-end; padding:24px; }
+    .project-card:hover .card-overlay { background:rgba(10,10,10,.52); }
+    .card-meta { opacity:0; transform:translateY(10px); transition:opacity .3s ease .05s, transform .3s ease .05s; width:100%; }
+    .project-card:hover .card-meta { opacity:1; transform:translateY(0); }
+    .card-cta { opacity:0; transform:translateY(6px); transition:opacity .3s ease .1s, transform .3s ease .1s; }
+    .project-card:hover .card-cta { opacity:1; transform:translateY(0); }
+
+    /* Dividers */
+    .rule { border:none; border-top:1px solid var(--border); }
+
+    /* Utilities */
+    .site-pad { padding-left:24px; padding-right:24px; }
+    @media (min-width:1024px) { .site-pad { padding-left:48px; padding-right:48px; } }
+    @media (min-width:1248px) { .site-pad { padding-left:24px; padding-right:24px; } }
+
+    @media (prefers-reduced-motion:reduce) {
+      .reveal { opacity:1; transform:none; transition:none; }
+      #site-header, .nav-link::after, .btn { transition:none; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ══ MOBILE MENU ══════════════════════════════ -->
+<div id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menú">
+  <div class="flex items-center justify-between h-[56px]">
+    <span class="t-label text-ink opacity-40">Menú</span>
+    <button id="mobile-close" aria-label="Cerrar menú"
+      class="p-2 bg-transparent border-none cursor-pointer flex flex-col gap-[5px]">
+      <span class="hb-line" style="transform:rotate(45deg) translate(4.5px,4.5px)"></span>
+      <span class="hb-line" style="opacity:0"></span>
+      <span class="hb-line" style="transform:rotate(-45deg) translate(4.5px,-4.5px)"></span>
+    </button>
+  </div>
+  <nav class="flex flex-col gap-7 mt-10">
+    <!-- TODO: actualizar hrefs si necesario -->
+    <a href="../index.html#nosotros"  class="mobile-nav-link" data-close-menu>Nosotros</a>
+    <a href="../index.html#proyectos" class="mobile-nav-link" data-close-menu>Proyectos</a>
+    <a href="../index.html#servicios" class="mobile-nav-link" data-close-menu>Servicios</a>
+    <a href="../index.html#contacto"  class="mobile-nav-link" data-close-menu>Contacto</a>
+  </nav>
+  <div class="mt-auto">
+    <a href="tel:+5491112345678" class="t-body font-semibold text-ink">+54 9 11 1234-5678</a>
+    <p class="t-label opacity-40 mt-2">Buenos Aires, Argentina</p>
+  </div>
+</div>
+
+
+<!-- ══ FIXED HEADER ══════════════════════════════ -->
+<header id="site-header" role="banner">
+  <div class="max-w-site mx-auto h-full site-pad flex items-center justify-between">
+    <a href="../index.html" class="t-label font-bold tracking-[0.16em] text-ink no-underline"
+       aria-label="Ritta Estudio — Inicio">RITTA ESTUDIO</a>
+
+    <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal">
+      <!-- TODO: ajustar paths si la página está en subdirectorio -->
+      <a href="../index.html#nosotros"  class="nav-link">Nosotros</a>
+      <a href="../index.html#proyectos" class="nav-link">Proyectos</a>
+      <a href="../index.html#servicios" class="nav-link">Servicios</a>
+      <a href="../index.html#contacto"  class="nav-link">Contacto</a>
+    </nav>
+
+    <div class="flex items-center gap-5">
+      <a href="../index.html#contacto" class="btn btn-outline hidden sm:inline-flex">Consultar</a>
+      <button id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu"
+        class="md:hidden flex flex-col gap-[5px] p-2 bg-transparent border-none cursor-pointer">
+        <span class="hb-line"></span>
+        <span class="hb-line"></span>
+        <span class="hb-line"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════
+     §B · HERO COMPACTO — para páginas internas
+     Reemplazar el texto entre los TODO:
+═════════════════════════════════════════════ -->
+<section class="bg-cream pt-[calc(var(--nav-h)+60px)] pb-16 lg:pb-24">
+  <div class="max-w-site mx-auto site-pad">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 mb-8" aria-label="Ruta de navegación">
+      <a href="../index.html" class="t-label opacity-35 hover:opacity-70 transition-opacity no-underline">Inicio</a>
+      <span class="t-label opacity-20">/</span>
+      <!-- TODO: nombre de esta sección -->
+      <span class="t-label opacity-55">TODO: Nombre de página</span>
+    </nav>
+
+    <span class="t-label opacity-40 reveal">TODO: Subtítulo / categoría</span>
+    <!-- TODO: Título principal -->
+    <h1 class="t-hero mt-3 max-w-[800px] reveal reveal-d1">
+      TODO:<br>TÍTULO
+    </h1>
+
+    <!-- TODO: Descripción breve -->
+    <p class="t-body opacity-55 max-w-xl mt-6 reveal reveal-d2">
+      TODO: Descripción de la página. Máximo 2-3 oraciones.
+    </p>
+
+  </div>
+</section>
+
+<hr class="rule max-w-site mx-auto site-pad" style="margin-left:auto;margin-right:auto;">
+
+
+<!-- ══════════════════════════════════════════════
+     §A · HERO CON IMAGEN — para landing pages
+     (borrar §B si usás este)
+═════════════════════════════════════════════
+<section class="bg-cream min-h-dvh flex flex-col" style="padding-top:var(--nav-h)">
+  <div class="flex-1 flex items-end">
+    <div class="max-w-site mx-auto w-full site-pad grid grid-cols-1 lg:grid-cols-[1fr_2.2fr_1fr] gap-6 items-end pb-14 lg:pb-20">
+      <div class="hidden lg:block reveal reveal-d1">
+        <div class="img-ph w-full h-[360px] rounded-[2px]"></div>
+      </div>
+      <div class="flex flex-col items-start lg:items-center lg:text-center">
+        <span class="t-label opacity-40 mb-6 reveal">TODO: Tagline</span>
+        <h1 class="t-hero mb-6 reveal reveal-d1">TODO:<br>TÍTULO<br>PRINCIPAL</h1>
+        <p class="t-body opacity-55 max-w-[300px] mb-8 reveal reveal-d2">TODO: Descripción breve.</p>
+        <div class="flex flex-wrap gap-3 reveal reveal-d3">
+          <a href="#" class="btn btn-outline">TODO: CTA 1</a>
+          <a href="#" class="btn btn-solid">TODO: CTA 2</a>
+        </div>
+      </div>
+      <div class="hidden lg:block reveal reveal-d2">
+        <div class="img-ph img-ph-alt w-full h-[360px] rounded-[2px]"></div>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-site mx-auto w-full site-pad">
+    <hr class="rule">
+    <div class="flex items-center justify-between py-4">
+      <span class="t-label opacity-35">Est. 2014 · Buenos Aires</span>
+    </div>
+  </div>
+</section>
+-->
+
+
+<!-- ══════════════════════════════════════════════
+     §C · CONTENIDO DE TEXTO LARGO
+     Usar para páginas About, Blog, etc.
+═════════════════════════════════════════════ -->
+<section class="bg-cream py-24 lg:py-32">
+  <div class="max-w-site mx-auto site-pad">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 lg:gap-20">
+
+      <!-- Sidebar / índice -->
+      <aside>
+        <div class="t-label opacity-40 mb-4 reveal">En esta página</div>
+        <nav class="flex flex-col gap-2" aria-label="Índice de página">
+          <!-- TODO: agregar/quitar links según el contenido -->
+          <a href="#seccion-1" class="nav-link text-left opacity-60 pb-0">TODO: Sección 1</a>
+          <a href="#seccion-2" class="nav-link text-left opacity-60 pb-0">TODO: Sección 2</a>
+          <a href="#seccion-3" class="nav-link text-left opacity-60 pb-0">TODO: Sección 3</a>
+        </nav>
+      </aside>
+
+      <!-- Contenido principal -->
+      <main>
+        <div id="seccion-1" class="mb-14 reveal">
+          <h2 class="font-bold text-[22px] uppercase tracking-tight mb-4">TODO: Sección 1</h2>
+          <!-- TODO: contenido -->
+          <p class="t-body opacity-60 mb-4">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Reemplazar con contenido real.
+          </p>
+          <p class="t-body opacity-60">
+            Párrafo adicional si es necesario.
+          </p>
+        </div>
+
+        <hr class="rule mb-14">
+
+        <div id="seccion-2" class="mb-14 reveal">
+          <h2 class="font-bold text-[22px] uppercase tracking-tight mb-4">TODO: Sección 2</h2>
+          <!-- TODO: contenido -->
+          <p class="t-body opacity-60 mb-4">
+            Lorem ipsum dolor sit amet consectetur.
+          </p>
+        </div>
+
+        <hr class="rule mb-14">
+
+        <div id="seccion-3" class="reveal">
+          <h2 class="font-bold text-[22px] uppercase tracking-tight mb-4">TODO: Sección 3</h2>
+          <p class="t-body opacity-60">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          </p>
+        </div>
+      </main>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     §D · GRID DE TARJETAS — para proyectos, servicios
+═════════════════════════════════════════════ -->
+<!--
+<section class="bg-cream py-24 lg:py-32">
+  <div class="max-w-site mx-auto site-pad">
+    <span class="t-label opacity-40 reveal">TODO: Categoría</span>
+    <h2 class="t-section mt-3 mb-10 reveal reveal-d1">TODO: TÍTULO</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+      Repetir este bloque por cada tarjeta:
+      <article class="project-card reveal" tabindex="0" aria-label="TODO: nombre proyecto">
+        <div class="card-img img-ph"></div>
+        <div class="card-overlay">
+          <div class="w-full flex items-end justify-between">
+            <div class="card-meta">
+              <div class="t-label mb-1" style="color:rgba(255,255,255,.6)">TODO: Categoría</div>
+              <h3 class="text-white font-bold uppercase tracking-tight text-lg leading-tight">TODO: Título</h3>
+              <div class="t-label mt-1" style="color:rgba(255,255,255,.45)">TODO: Subtítulo</div>
+            </div>
+            <button class="btn card-cta" style="color:white;border-color:rgba(255,255,255,.55);flex-shrink:0;margin-left:12px">Ver</button>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+-->
+
+
+<!-- ══════════════════════════════════════════════
+     §E · CTA DE CIERRE
+     Poner siempre antes del footer
+═════════════════════════════════════════════ -->
+<section class="bg-cream py-24 lg:py-32">
+  <div class="max-w-site mx-auto site-pad">
+    <hr class="rule mb-16">
+
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+      <div class="max-w-xl">
+        <span class="t-label opacity-40 reveal">¿Comenzamos?</span>
+        <!-- TODO: personalizar llamada a la acción -->
+        <h2 class="t-section mt-4 reveal reveal-d1">
+          HABLEMOS<br>DE TU PROYECTO
+        </h2>
+        <p class="t-body opacity-55 mt-5 reveal reveal-d2">
+          Contanos tu idea y te acompañamos desde el primer boceto hasta el resultado final.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3 reveal reveal-d2">
+        <a href="../index.html#contacto" class="btn btn-solid">Consultar ahora</a>
+        <a href="../index.html#proyectos" class="btn btn-outline">Ver trabajos</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="rule">
+
+
+<!-- ══ FOOTER ════════════════════════════════════ -->
+<footer class="bg-cream py-16 lg:py-20" role="contentinfo">
+  <div class="max-w-site mx-auto site-pad">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
+      <div class="sm:col-span-2">
+        <a href="../index.html" class="t-label font-bold tracking-[0.16em] text-ink no-underline text-base">RITTA ESTUDIO</a>
+        <p class="t-body opacity-50 mt-4 max-w-xs">Diseño de interiores que transforma espacios ordinarios en experiencias extraordinarias.</p>
+      </div>
+      <div>
+        <div class="t-label opacity-40 mb-5">Navegación</div>
+        <nav class="flex flex-col gap-3">
+          <a href="../index.html#nosotros"  class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Nosotros</a>
+          <a href="../index.html#proyectos" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Proyectos</a>
+          <a href="../index.html#servicios" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Servicios</a>
+          <a href="../index.html#contacto"  class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Contacto</a>
+        </nav>
+      </div>
+      <div>
+        <div class="t-label opacity-40 mb-5">Contacto</div>
+        <div class="flex flex-col gap-3">
+          <a href="tel:+5491112345678" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">+54 9 11 1234-5678</a>
+          <a href="mailto:hola@rittaestudio.com" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">hola@rittaestudio.com</a>
+          <address class="not-italic t-body opacity-55 leading-relaxed">Av. Corrientes 1234<br>Buenos Aires, Argentina</address>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rule mb-7">
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <p class="t-label opacity-30">© 2024 Ritta Estudio. Todos los derechos reservados.</p>
+      <div class="flex gap-6">
+        <a href="#" class="t-label opacity-30 hover:opacity-60 transition-opacity no-underline">Privacidad</a>
+        <a href="#" class="t-label opacity-30 hover:opacity-60 transition-opacity no-underline">Términos</a>
+      </div>
+    </div>
+
+  </div>
+</footer>
+
+
+<!-- ══ SHARED JS (no modificar) ══════════════════ -->
+<script>
+/* Header scroll */
+const header = document.getElementById('site-header');
+let lastY = 0, ticking = false;
+window.addEventListener('scroll', () => {
+  if (ticking) return;
+  requestAnimationFrame(() => {
+    const y = window.scrollY;
+    if (y > 80) {
+      header.classList.toggle('scrolled-down', y > lastY);
+      header.classList.remove('scrolled-up');
+    } else {
+      header.classList.remove('scrolled-down');
+    }
+    lastY = y; ticking = false;
+  });
+  ticking = true;
+}, { passive: true });
+
+/* Reveal */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -48px 0px' });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* Mobile menu */
+const hamburger  = document.getElementById('hamburger');
+const mobileMenu = document.getElementById('mobile-menu');
+const mobileClose= document.getElementById('mobile-close');
+function openMenu()  { mobileMenu.classList.add('open'); hamburger.setAttribute('aria-expanded','true');  document.body.style.overflow='hidden'; mobileClose.focus(); }
+function closeMenu() { mobileMenu.classList.remove('open'); hamburger.setAttribute('aria-expanded','false'); document.body.style.overflow=''; hamburger.focus(); }
+hamburger.addEventListener('click', openMenu);
+mobileClose.addEventListener('click', closeMenu);
+document.querySelectorAll('[data-close-menu]').forEach(el => el.addEventListener('click', closeMenu));
+document.addEventListener('keydown', e => { if (e.key==='Escape' && mobileMenu.classList.contains('open')) closeMenu(); });
+</script>
+
+</body>
+</html>

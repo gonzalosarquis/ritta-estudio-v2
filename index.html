@@ -1,0 +1,2594 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Ritta Estudio — Diseño de interiores que transforma espacios ordinarios en experiencias extraordinarias.">
+  <title>Ritta Estudio — Diseño de Interiores</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CDN v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#F4F0EC',
+            ink: '#0A0A0A',
+            muted: '#6B6560',
+          },
+          fontFamily: { sans: ['Manrope', 'Arial', 'sans-serif'] },
+          maxWidth: { site: '1200px' },
+        }
+      }
+    }
+  </script>
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer=""></script>
+
+  <style>
+    /* ════════════════════════════════════════════
+       DESIGN TOKENS
+    ════════════════════════════════════════════ */
+    :root {
+      --bg: #F4F0EC;
+      --ink: #0A0A0A;
+      --white: #FFFFFF;
+      --muted: rgba(10, 10, 10, 0.45);
+      --border: rgba(10, 10, 10, 0.25);
+      --radius-pill: 30px;
+      --nav-h: 56px;
+      --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* ════════════════════════════════════════════
+       BASE
+    ════════════════════════════════════════════ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      /* No scroll-behavior: smooth here — JS handles it with header offset */
+      font-family: 'Manrope', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      overflow-x: hidden;
+      margin: 0;
+      cursor: none;
+      /* Custom cursor active on pointer:fine devices */
+    }
+
+    @media (pointer: coarse) {
+      body {
+        cursor: auto;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       CUSTOM CURSOR
+       Only renders on devices with a mouse (pointer:fine).
+       Two layers: outer ring (laggy) + inner dot (instant).
+    ════════════════════════════════════════════ */
+    #cursor,
+    #cursor-dot {
+      position: fixed;
+      top: 0;
+      left: 0;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      /* hidden until first mouse move */
+      will-change: transform;
+    }
+
+    #cursor {
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(10, 10, 10, 0.45);
+      /* transition only visual props — position is updated every frame via JS */
+      transition:
+        width 0.3s var(--ease-out),
+        height 0.3s var(--ease-out),
+        background 0.3s var(--ease-out),
+        border-color 0.3s var(--ease-out),
+        opacity 0.4s ease;
+    }
+
+    #cursor.cursor-hover {
+      width: 60px;
+      height: 60px;
+      background: rgba(10, 10, 10, 0.05);
+      border-color: rgba(10, 10, 10, 0.25);
+    }
+
+    #cursor-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--ink);
+      transition: opacity 0.4s ease;
+    }
+
+    @media (pointer: coarse) {
+
+      #cursor,
+      #cursor-dot {
+        display: none !important;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       TYPOGRAPHY SCALE
+    ════════════════════════════════════════════ */
+    .t-hero {
+      font-size: clamp(60px, 9vw, 140px);
+      font-weight: 500;
+      line-height: 0.90;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+    }
+
+    .t-section {
+      font-size: clamp(26px, 3.5vw, 46px);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .t-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 6px 16px;
+      opacity: 0.55;
+    }
+
+    .t-paragraph {
+      font-size: 13px;
+      line-height: 1.6;
+      opacity: 0.6;
+      margin: 0;
+    }
+
+    .t-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .t-body {
+      font-size: 13px;
+      line-height: 1.75;
+      font-weight: 400;
+    }
+
+    /* ════════════════════════════════════════════
+       HERO LINE CLIP REVEAL
+       .hero-line: the clip container (overflow:hidden).
+         - padding-top/bottom give headroom so ascenders and
+           descenders are never cut by the overflow boundary,
+           even with a tight line-height on .t-hero.
+         - Negative margins pull the visual spacing back to match
+           the original line-height so lines don't drift apart.
+       .hero-line-inner: the animated element.
+         - CSS sets the initial hidden state (transform: translateY(110%))
+           so the text is invisible even before GSAP loads,
+           preventing a flash-of-visible-text on slow connections.
+         - GSAP overrides this with its own set() + to() animation.
+    ════════════════════════════════════════════ */
+    .hero-line {
+      display: block;
+      overflow: hidden;
+      /* Vertical headroom to prevent ascender/descender clipping */
+      padding-top: 0.22em;
+      margin-top: -0.22em;
+      padding-bottom: 0.12em;
+      margin-bottom: -0.12em;
+    }
+
+    .hero-line-inner {
+      display: block;
+      /*
+        visibility:hidden oculta el texto sin afectar el layout ni la posición.
+        Si GSAP carga: lo pone en visible + yPercent:110, luego anima a 0.
+        Si GSAP NO carga (CDN lento/offline): el fallback JS lo pone visible.
+        Nunca queda texto cortado ni fantasmas del transform.
+      */
+      visibility: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-line-inner {
+        visibility: visible !important;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       HEADER  (300ms transition, as specified)
+    ════════════════════════════════════════════ */
+    #site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background-color: var(--bg);
+      border-bottom: 1px solid var(--border);
+      transition: transform 0.3s var(--ease-out);
+      will-change: transform;
+    }
+
+    #site-header.header-hidden {
+      transform: translateY(-100%);
+    }
+
+    /* ════════════════════════════════════════════
+       NAV LINKS
+    ════════════════════════════════════════════ */
+    .nav-link {
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+      position: relative;
+      padding-bottom: 2px;
+      opacity: 0.75;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--ink);
+      transition: width 0.28s var(--ease-out);
+    }
+
+    .nav-link:hover {
+      opacity: 1;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* ════════════════════════════════════════════
+       BUTTONS
+    ════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: var(--radius-pill);
+      padding: 0;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      cursor: none;
+      /* inherit body cursor:none */
+      text-decoration: none;
+      border: 1px solid var(--ink);
+      transition: background-color 0.22s ease, color 0.22s ease;
+      line-height: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .btn-outline:hover {
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    .btn-solid {
+      background: var(--ink);
+      color: var(--white);
+    }
+
+    .btn-solid:hover {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    /* ════════════════════════════════════════════
+       BUTTON DOT — animated pill accent
+    ════════════════════════════════════════════ */
+    .btn-dot {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* Track sliding */
+    .btn-inner {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 26px;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-inner>span,
+    .btn-inner-clone>span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-inner-clone {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 26px;
+    }
+
+    .btn:hover .btn-inner {
+      transform: translateY(-100%);
+    }
+
+    @media (pointer: coarse) {
+      .btn {
+        cursor: pointer;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       HAMBURGER
+    ════════════════════════════════════════════ */
+    .hb-line {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      background: var(--ink);
+      border-radius: 2px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    /* ════════════════════════════════════════════
+       MOBILE MENU
+    ════════════════════════════════════════════ */
+    #mobile-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      padding: 0 32px 40px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #mobile-menu.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .mobile-nav-link {
+      font-size: clamp(32px, 8vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+      line-height: 1;
+      transition: opacity 0.2s ease;
+      opacity: 0.85;
+    }
+
+    .mobile-nav-link:hover {
+      opacity: 1;
+    }
+
+    /* ════════════════════════════════════════════
+       SCROLL REVEAL — GSAP-driven
+       Initial state (opacity:0 + translateY) is set by GSAP.
+       CSS keeps elements invisible until GSAP initialises.
+    ════════════════════════════════════════════ */
+    .reveal {
+      opacity: 0;
+    }
+
+    /* ════════════════════════════════════════════
+       IMAGE PLACEHOLDERS
+    ════════════════════════════════════════════ */
+    .img-ph {
+      background: linear-gradient(160deg, #DDD5C9 0%, #C9C0B5 50%, #B8AFA4 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .img-ph::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(-45deg,
+          transparent 0px, transparent 48px,
+          rgba(255, 255, 255, 0.04) 48px, rgba(255, 255, 255, 0.04) 96px);
+    }
+
+    .img-ph-alt {
+      background: linear-gradient(140deg, #C8BFBA 0%, #B5ABA5 60%, #A89E98 100%);
+    }
+
+    .img-ph-dark {
+      background: linear-gradient(160deg, #BEB6AE 0%, #A8A09A 60%, #9A9290 100%);
+    }
+
+    /* ════════════════════════════════════════════
+       DIVIDERS
+    ════════════════════════════════════════════ */
+    .rule {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ════════════════════════════════════════════
+       STATS GRID
+    ════════════════════════════════════════════ */
+    .stat-num {
+      font-size: clamp(32px, 3.5vw, 48px);
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      opacity: 0.55;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      border-top: 1px solid #d0cdc8;
+    }
+
+    /* Mobile 2×2 */
+    .stat-cell:nth-child(1) {
+      padding: 32px 24px 32px 0;
+      border-right: 1px solid #d0cdc8;
+      border-bottom: 1px solid #d0cdc8;
+    }
+
+    .stat-cell:nth-child(2) {
+      padding: 32px 0 32px 24px;
+      border-bottom: 1px solid #d0cdc8;
+    }
+
+    .stat-cell:nth-child(3) {
+      padding: 32px 24px 32px 0;
+      border-right: 1px solid #d0cdc8;
+    }
+
+    .stat-cell:nth-child(4) {
+      padding: 32px 0 32px 24px;
+    }
+
+    /* Desktop 4 col */
+    @media (min-width: 1024px) {
+      .stat-cell:nth-child(1) {
+        padding: 48px 64px 48px 0;
+        border-right: 1px solid #d0cdc8;
+        border-bottom: none;
+      }
+
+      .stat-cell:nth-child(2) {
+        padding: 48px 64px 48px 64px;
+        border-right: 1px solid #d0cdc8;
+        border-bottom: none;
+      }
+
+      .stat-cell:nth-child(3) {
+        padding: 48px 64px 48px 64px;
+        border-right: 1px solid #d0cdc8;
+        border-bottom: none;
+      }
+
+      .stat-cell:nth-child(4) {
+        padding: 48px 0 48px 64px;
+        border-right: none;
+        border-bottom: none;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       PROJECT CARDS
+       Hover: image scale 1→1.08 + overlay + centered "VER"
+    ════════════════════════════════════════════ */
+    .project-card {
+      display: block;
+    }
+
+    .project-card:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .card-img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      transition: transform 0.65s var(--ease-out);
+      will-change: transform;
+    }
+
+    /* (Hover effects are handled by Tailwind classes on the individual elements now) */
+
+    @media (pointer: coarse) {
+      .project-card {
+        cursor: pointer;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       PROJECT MODAL
+    ════════════════════════════════════════════ */
+    .project-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 22px;
+    }
+
+    .project-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .project-modal__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.46);
+      backdrop-filter: blur(2px);
+    }
+
+    .project-modal__panel {
+      position: relative;
+      width: min(1120px, 96vw);
+      max-height: calc(100vh - 44px);
+      overflow: auto;
+      background: #f1efeb;
+      border: 1px solid #d7d2cb;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      padding: 34px 34px 30px;
+    }
+
+    .project-modal__close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(10, 10, 10, 0.2);
+      border-radius: 999px;
+      color: rgba(10, 10, 10, 0.8);
+      background: rgba(241, 239, 235, 0.98);
+      font-size: 32px;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      z-index: 3;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.14);
+    }
+
+    .project-modal__close:hover {
+      background: rgba(241, 239, 235, 1);
+    }
+
+    .project-modal__close:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .project-modal__content {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+      gap: 34px;
+      align-items: start;
+      padding-top: 18px;
+    }
+
+    .project-modal__title {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .project-modal__description {
+      margin-top: 16px;
+      color: rgba(10, 10, 10, 0.66);
+      font-size: 13px;
+      line-height: 1.65;
+      max-width: 52ch;
+    }
+
+    .project-modal__meta {
+      margin-top: 32px;
+      border-top: 1px solid #d0cdc8;
+    }
+
+    .project-modal__meta-heading {
+      margin: 0;
+      padding-top: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .project-modal__meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid #d0cdc8;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .project-modal__meta-row span {
+      color: rgba(10, 10, 10, 0.58);
+    }
+
+    .project-modal__meta-row strong {
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .project-modal__main-image {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border: 1px solid #d0cdc8;
+      transition: opacity 0.24s ease, transform 0.24s ease;
+    }
+
+    .project-modal__main-image.is-changing {
+      opacity: 0.72;
+      transform: scale(0.988);
+    }
+
+    .project-modal__image-wrap {
+      position: relative;
+    }
+
+    .project-modal__nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      color: #fff;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(2px);
+      border-radius: 999px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      line-height: 1;
+      z-index: 2;
+      transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .project-modal__nav:hover {
+      background: rgba(0, 0, 0, 0.45);
+      transform: translateY(-50%) scale(1.03);
+    }
+
+    .project-modal__nav:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .project-modal__nav--prev {
+      left: 12px;
+    }
+
+    .project-modal__nav--next {
+      right: 12px;
+    }
+
+    .project-modal__counter {
+      margin-top: 8px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(10, 10, 10, 0.62);
+    }
+
+    .project-modal__thumbs {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 72%;
+    }
+
+    .project-modal__thumb {
+      border: 1px solid #c7c3bc;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      opacity: 0.72;
+      transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .project-modal__thumb img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      display: block;
+    }
+
+    .project-modal__thumb.is-active {
+      border-color: #8d8579;
+      opacity: 1;
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 900px) {
+      .project-modal__panel {
+        padding: 22px;
+      }
+
+      .project-modal__content {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .project-modal__thumbs {
+        max-width: 100%;
+      }
+
+      .project-modal__close {
+        top: 10px;
+        right: 10px;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       SERVICES LIST
+    ════════════════════════════════════════════ */
+    .service-row {
+      width: 100%;
+      border-left: none;
+      border-right: none;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      padding: 22px 0;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      text-transform: uppercase;
+      color: var(--ink);
+      transition: color 0.3s ease;
+    }
+
+    .service-row:last-child {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .service-row:focus-visible {
+      outline: 2px solid rgba(10, 10, 10, 0.55);
+      outline-offset: 2px;
+    }
+
+    .service-row__arrow {
+      width: 14px;
+      height: 14px;
+      opacity: 1;
+      transition: transform 0.3s var(--ease-out);
+      /* Ensure the arrow stays centered and doesn't change dimensions during rotation */
+      transform-origin: center;
+    }
+
+    .service-row:hover .service-row__arrow {
+      transform: rotate(45deg);
+    }
+
+
+
+    .services-copy {
+      padding-top: 0;
+    }
+
+    .services-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid rgba(10, 10, 10, 0.25);
+      border-radius: 999px;
+      padding: 0 16px;
+      font-size: 11px;
+      line-height: 1;
+      opacity: 0.7;
+      color: var(--ink);
+    }
+
+    .services-title {
+      margin: 20px 0 0;
+      font-size: clamp(34px, 3.8vw, 46px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .services-text {
+      margin: 20px 0 0;
+      max-width: 58ch;
+      font-size: 14px;
+      line-height: 1.5;
+      opacity: 0.6;
+      color: var(--ink);
+    }
+
+    .services-list {
+      margin-top: 40px;
+    }
+
+    .services-cta {
+      margin-top: 32px;
+    }
+
+    @media (max-width: 1023px) {
+      .services-copy {
+        padding-top: 0;
+      }
+
+      .services-image {
+        height: 56vh;
+      }
+    }
+
+    .contact-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 95;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .contact-modal.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .contact-modal__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.46);
+      backdrop-filter: blur(2px);
+    }
+
+    .contact-modal__panel {
+      position: relative;
+      width: min(700px, 96vw);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      background: #f1efeb;
+      border: 1px solid #d7d2cb;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      padding: 28px;
+    }
+
+    .contact-modal__close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(10, 10, 10, 0.2);
+      border-radius: 999px;
+      color: rgba(10, 10, 10, 0.8);
+      background: rgba(241, 239, 235, 0.98);
+      font-size: 32px;
+      line-height: 1;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .contact-modal__close:hover {
+      background: rgba(241, 239, 235, 1);
+    }
+
+    .contact-modal__close:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    .whatsapp-fab {
+      position: fixed;
+      right: 28px;
+      bottom: 84px;
+      z-index: 95;
+      border-radius: 999px;
+      padding: 10px 14px 10px 12px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #25d366;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .whatsapp-fab:hover {
+      background: #1fbe5d;
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .whatsapp-fab:focus-visible {
+      outline: 2px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    .whatsapp-fab svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+      .whatsapp-fab {
+        right: 26px;
+        bottom: 84px;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .whatsapp-fab span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       FORM
+    ════════════════════════════════════════════ */
+    .form-field {
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--ink);
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      padding: 13px 0;
+      width: 100%;
+      outline: none;
+      letter-spacing: 0.02em;
+      transition: border-color 0.2s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .form-field::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    .form-field:focus {
+      border-bottom-color: var(--ink);
+    }
+
+    .checkbox-custom {
+      width: 16px;
+      height: 16px;
+      border: 1px solid rgba(10, 10, 10, 0.4);
+      border-radius: 2px;
+      flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      margin-top: 2px;
+    }
+
+    .checkbox-custom:checked {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .checkbox-custom:checked::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 2.5px;
+      width: 9px;
+      height: 5px;
+      border-left: 1.5px solid white;
+      border-bottom: 1.5px solid white;
+      transform: rotate(-45deg);
+    }
+
+    .checkbox-custom:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+
+    /* ════════════════════════════════════════════
+       SCROLL-TO-TOP
+    ════════════════════════════════════════════ */
+    #scroll-top {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 44px;
+      height: 44px;
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 90;
+    }
+
+    #scroll-top.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #scroll-top:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    @media (pointer: coarse) {
+      #scroll-top {
+        cursor: pointer;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       UTILITIES
+    ════════════════════════════════════════════ */
+    .site-pad {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    @media (min-width: 1024px) {
+      .site-pad {
+        padding-left: 48px;
+        padding-right: 48px;
+      }
+    }
+
+    @media (min-width: 1248px) {
+      .site-pad {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       REDUCED MOTION OVERRIDES
+    ════════════════════════════════════════════ */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      .hero-line-inner {
+        transform: none !important;
+      }
+
+      #site-header {
+        transition: none;
+      }
+
+      .nav-link::after {
+        transition: none;
+      }
+
+      .btn {
+        transition: none;
+      }
+
+      .card-img {
+        transition: none;
+      }
+
+      .card-ver,
+      .card-bottom {
+        transition: none;
+        opacity: 1;
+        transform: none;
+      }
+
+      #cursor,
+      #cursor-dot {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════════
+     CUSTOM CURSOR (2 layers: ring + dot)
+════════════════════════════════════════════ -->
+  <div id="cursor" aria-hidden="true"></div>
+  <div id="cursor-dot" aria-hidden="true"></div>
+
+
+  <!-- ════════════════════════════════════════════
+     MOBILE MENU
+════════════════════════════════════════════ -->
+  <div id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menú">
+    <div class="flex items-center justify-between h-[56px]">
+      <span class="t-label text-ink opacity-40">Menú</span>
+      <button id="mobile-close" aria-label="Cerrar menú"
+        class="p-2 bg-transparent border-none cursor-pointer flex flex-col gap-[5px]">
+        <span class="hb-line" style="transform:rotate(45deg) translate(4.5px,4.5px)"></span>
+        <span class="hb-line" style="opacity:0"></span>
+        <span class="hb-line" style="transform:rotate(-45deg) translate(4.5px,-4.5px)"></span>
+      </button>
+    </div>
+    <nav class="flex flex-col gap-7 mt-10" aria-label="Navegación">
+      <a href="#nosotros" class="mobile-nav-link" data-close-menu="">Nosotros</a>
+      <a href="#proyectos" class="mobile-nav-link" data-close-menu="">Proyectos</a>
+      <a href="#servicios" class="mobile-nav-link" data-close-menu="">Servicios</a>
+      <a href="#" class="mobile-nav-link" data-close-menu="" data-contact-open="">Contacto</a>
+    </nav>
+    <div class="mt-auto">
+      <a href="tel:+5491112345678" class="t-body font-semibold text-ink">+54 9 11 6744-5500</a>
+      <p class="t-label opacity-40 mt-2">Buenos Aires, Argentina</p>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════
+     FIXED HEADER
+════════════════════════════════════════════ -->
+  <header id="site-header" role="banner">
+    <div class="max-w-site mx-auto h-full site-pad flex items-center justify-between">
+
+      <a href="#inicio" class="flex-shrink-0" aria-label="Ritta Estudio — Inicio">
+        <!-- Reemplaza "logo.png" en la carpeta images con tu archivo real -->
+        <img src="images/logo.png" alt="Ritta Estudio Logo" class="h-4 sm:h-5 md:h-[20px] w-auto block">
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal">
+        <a href="#nosotros" class="nav-link">Nosotros</a>
+        <a href="#proyectos" class="nav-link">Proyectos</a>
+        <a href="#servicios" class="nav-link">Servicios</a>
+        <a href="#" class="nav-link" data-contact-open="">Contacto</a>
+      </nav>
+
+      <div class="flex items-center gap-5">
+        <a href="tel:+5491112345678" class="nav-link hidden lg:inline">54 9 11 6744-5500</a>
+        <a href="#" class="btn btn-outline hidden sm:inline-flex" data-contact-open="">
+          <span class="btn-inner">
+            <span>Consultar</span>
+            <span class="btn-inner-clone" aria-hidden="true"><span>Consultar</span></span>
+          </span>
+        </a>
+        <button id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu"
+          class="md:hidden flex flex-col gap-[5px] p-2 bg-transparent border-none cursor-pointer">
+          <span class="hb-line"></span>
+          <span class="hb-line"></span>
+          <span class="hb-line"></span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- ════════════════════════════════════════════
+     §1 · HERO
+     Layout (top → bottom):
+       ① Eyebrow label
+       ② Giant 2-line title (line 2 indented right)
+       ③ Subtitle (left) + CTA buttons (right)
+       ④ Image: full-bleed 65vh, breakout via negative margin
+     Notes:
+       - Parent padding uses clamp(20px,4vw,60px) so the title
+         never touches the viewport edge even at large sizes
+       - overflow:hidden is ONLY on .hero-line (not on any ancestor)
+         so the vertical clip-reveal works without horizontal cutoff
+       - Image breakout: width = 100% + 2×padding; margin-left = -padding
+════════════════════════════════════════════ -->
+  <section id="inicio" class="bg-cream" style="padding-top: var(--nav-h)">
+
+    <!--
+    Single container with clamp padding.
+    No overflow:hidden here — that lives only on .hero-line.
+  -->
+    <div id="hero-text-block" style="padding: clamp(40px,5vw,80px) clamp(20px,4vw,60px) clamp(32px,4vw,56px)">
+
+      <!-- ① Eyebrow -->
+      <p id="hero-label" class="t-label opacity-40 mb-8">
+        Diseño de Interiores · Buenos Aires · Est. 2022
+      </p>
+
+      <!--
+      HERO TITLE
+      Each .hero-line: overflow:hidden — clips only this line vertically
+        for the clip-reveal. Does NOT affect horizontal layout.
+      Line 2: margin-left creates the staircase indent.
+    -->
+      <h1 class="t-hero mb-10 lg:mb-14">
+        <span class="hero-line">
+          <span class="hero-line-inner">DISEÑO &amp;</span>
+        </span>
+        <span class="hero-line" style="margin-left: clamp(48px, 10vw, 180px)">
+          <span class="hero-line-inner">INTERIOR</span>
+        </span>
+      </h1>
+
+      <!-- ③ Subtitle left · Buttons right -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+
+        <p id="hero-sub" class="t-body opacity-55 max-w-[300px]">
+          Transformamos espacios en experiencias únicas. Cada proyecto es una obra personalizada que refleja tu visión y
+          estilo de vida.
+        </p>
+
+        <div id="hero-cta" class="flex flex-wrap gap-3 flex-shrink-0">
+          <a href="#proyectos" class="btn btn-outline">
+            <span class="btn-inner">
+              <span><span class="btn-dot" aria-hidden="true"></span>Ver proyectos</span>
+              <span class="btn-inner-clone" aria-hidden="true"><span><span class="btn-dot" aria-hidden="true"></span>Ver
+                  proyectos</span></span>
+            </span>
+          </a>
+          <a href="#" class="btn btn-solid" data-contact-open="">
+            <span class="btn-inner">
+              <span><span class="btn-dot" aria-hidden="true"></span>Contáctanos</span>
+              <span class="btn-inner-clone" aria-hidden="true"><span><span class="btn-dot"
+                    aria-hidden="true"></span>Contáctanos</span></span>
+            </span>
+          </a>
+        </div>
+
+      </div>
+
+      <!--
+      ④ HERO IMAGE — full-bleed breakout
+      width: 100% + 2×padding cancels the parent padding on both sides.
+      margin-left: -padding shifts the image to the left edge of viewport.
+      overflow:hidden on this wrapper contains the GSAP scale animation.
+    -->
+      <div id="hero-img-wrap" style="
+           position:    relative;
+           width:       calc(100% + 2 * clamp(20px, 4vw, 60px));
+           margin-left: calc(-1 * clamp(20px, 4vw, 60px));
+           height:      65vh;
+           overflow:    hidden;
+           margin-top:  clamp(32px, 5vw, 56px);
+         ">
+        <img id="hero-img-inner" src="images/hero.jpg" alt="Proyecto de diseño de interiores — Ritta Estudio"
+          style="width:100%; height:65vh; object-fit:cover; object-position:center; display:block;">
+        <!-- Curtain overlay — animated away on load to reveal the image -->
+        <div id="hero-curtain" style="
+             position:         absolute;
+             inset:            0;
+             background-color: var(--bg);
+             transform-origin: top;
+             z-index:          2;
+           "></div>
+      </div>
+
+    </div><!-- /hero-text-block -->
+
+    <!-- Bottom strip — uses standard site-pad -->
+    <div class="site-pad">
+      <hr class="rule">
+      <div class="flex items-center justify-between py-4">
+        <span class="t-label opacity-35">Buenos Aires, Argentina</span>
+        <div class="flex items-center gap-2 opacity-35">
+          <span class="t-label">Deslizar</span>
+          <svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true">
+            <path d="M6 1v12M1 8l5 5 5-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ════════════════════════════════════════════
+     §2 · ABOUT + STATS
+════════════════════════════════════════════ -->
+  <section id="nosotros" class="bg-cream pt-24">
+    <div class="site-pad">
+
+      <!-- Badge -->
+      <div class="reveal mb-8">
+        <span class="t-badge">Nosotros</span>
+      </div>
+
+      <!-- FILA 1: título + dos columnas de texto -->
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-10 lg:gap-8 items-start mb-16 lg:mb-20">
+
+        <!-- Col 1: título (ocupa 2 columnas en desktop) -->
+        <div class="reveal lg:col-span-2">
+          <h2 class="t-section">HEMOS CREADO MÁS DE 700 DISEÑOS ÚNICOS</h2>
+        </div>
+
+        <!-- Col 3: dos párrafos apilados + botón -->
+        <div class="flex flex-col gap-6">
+          <p class="t-paragraph reveal reveal-d1">
+            Somos un equipo de diseñadores creativos y apasionados, orientados a transformar espacios en ambientes
+            hermosos y funcionales. Nos especializamos en desarrollar proyectos innovadores y sostenibles que reflejan
+            un carácter único.
+          </p>
+          <p class="t-paragraph reveal reveal-d2">
+            Con un gran ojo para los detalles y el compromiso con la excelencia, trabajamos junto a nuestros clientes
+            para hacer realidad su visión. Desde el concepto inicial hasta la ejecución, superamos las expectativas
+            creando espacios que inspiran.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- FILA 2: 4 stats en columnas con separadores verticales -->
+      <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 reveal reveal-d1"
+        style="border-top: 1px solid var(--border);">
+        <div class="stat-cell">
+          <div class="stat-num" data-count="10" data-suffix="+">10+</div>
+          <div class="stat-label">años de experiencia</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num" data-count="212" data-suffix="+">212+</div>
+          <div class="stat-label">proyectos completados</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num" data-count="12" data-suffix="+">12+</div>
+          <div class="stat-label">premios de diseño</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-num" data-count="10" data-suffix="+">10+</div>
+          <div class="stat-label">miembros del equipo</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="project-modal" class="project-modal" aria-hidden="true">
+    <div class="project-modal__backdrop" data-project-close=""></div>
+    <div class="project-modal__panel" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
+      <button type="button" class="project-modal__close" data-project-close="" aria-label="Cerrar detalle de proyecto">
+        <span aria-hidden="true">×</span>
+      </button>
+
+      <div class="project-modal__content">
+        <div class="project-modal__copy">
+          <h3 id="project-modal-title" class="project-modal__title">PROJECT TITLE</h3>
+          <p id="project-modal-description" class="project-modal__description"></p>
+
+          <div class="project-modal__meta">
+            <h4 class="project-modal__meta-heading">PROJECT'S DETAILS</h4>
+
+            <div class="project-modal__meta-row">
+              <span>PROJECT</span>
+              <strong id="project-modal-client"></strong>
+            </div>
+            <div class="project-modal__meta-row">
+              <span>M²</span>
+              <strong id="project-modal-area"></strong>
+            </div>
+            <div class="project-modal__meta-row">
+              <span>CATEGORY</span>
+              <strong id="project-modal-category"></strong>
+            </div>
+            <div class="project-modal__meta-row">
+              <span>LOCATION</span>
+              <strong id="project-modal-location"></strong>
+            </div>
+            <div class="project-modal__meta-row">
+              <span>YEAR</span>
+              <strong id="project-modal-year"></strong>
+            </div>
+            <div class="project-modal__meta-row">
+              <span>STYLE</span>
+              <strong id="project-modal-style"></strong>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-outline mt-8" data-project-close="" data-contact-open="">
+            <span class="btn-inner">
+              <span><span class="btn-dot" aria-hidden="true"></span>Contactarme</span>
+              <span class="btn-inner-clone" aria-hidden="true"><span><span class="btn-dot" aria-hidden="true"></span>Get
+                  in touch</span></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="project-modal__media">
+          <div class="project-modal__image-wrap">
+            <button type="button" class="project-modal__nav project-modal__nav--prev" id="project-modal-prev"
+              aria-label="Imagen anterior">
+              ←
+            </button>
+            <img id="project-modal-image" class="project-modal__main-image" src="" alt="">
+            <button type="button" class="project-modal__nav project-modal__nav--next" id="project-modal-next"
+              aria-label="Imagen siguiente">
+              →
+            </button>
+          </div>
+          <div id="project-modal-counter" class="project-modal__counter">1 / 1</div>
+          <div id="project-modal-thumbs" class="project-modal__thumbs"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="contact-modal" class="contact-modal" aria-hidden="true">
+    <div class="contact-modal__backdrop" data-contact-close=""></div>
+    <div class="contact-modal__panel" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+      <button type="button" class="contact-modal__close" data-contact-close=""
+        aria-label="Cerrar formulario de contacto">
+        <span aria-hidden="true">×</span>
+      </button>
+
+      <span class="t-label opacity-40">Hablemos de tu proyecto</span>
+      <h2 id="contact-modal-title" class="t-section mt-4 mb-10">CONTACTO</h2>
+
+      <form id="contact-form" class="flex flex-col gap-7" onsubmit="handleSubmit(event)" novalidate=""
+        aria-label="Formulario de contacto">
+
+        <div>
+          <label for="f-name" class="t-label opacity-40 block mb-2">Nombre completo *</label>
+          <input type="text" id="f-name" name="name" class="form-field" placeholder="Tu nombre" required=""
+            autocomplete="name">
+        </div>
+
+        <div>
+          <label for="f-email" class="t-label opacity-40 block mb-2">Correo electrónico *</label>
+          <input type="email" id="f-email" name="email" class="form-field" placeholder="tu@email.com" required=""
+            autocomplete="email">
+        </div>
+
+        <div>
+          <label for="f-phone" class="t-label opacity-40 block mb-2">Teléfono</label>
+          <input type="tel" id="f-phone" name="phone" class="form-field" placeholder="+54 9 11 ···· ····"
+            autocomplete="tel">
+        </div>
+
+        <div>
+          <label for="f-service" class="t-label opacity-40 block mb-2">Servicio de interés</label>
+          <select id="f-service" name="service" class="form-field cursor-pointer">
+            <option value="">Seleccionar servicio...</option>
+            <option value="Living room design">Living room design</option>
+            <option value="3D rendering">3D rendering</option>
+            <option value="Detailing floorplans and layout">Detailing floorplans and layout</option>
+            <option value="Technical drawing">Technical drawing</option>
+            <option value="Budget planning">Budget planning</option>
+            <option value="Sourcing">Sourcing</option>
+            <option value="Private visits to showrooms &amp; factories">Private visits to showrooms &amp; factories
+            </option>
+            <option value="Author supervision">Author supervision</option>
+            <option value="Supply and logistic management">Supply and logistic management</option>
+            <option value="Space decoration">Space decoration</option>
+            <option value="Consultancy and support">Consultancy and support</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="f-msg" class="t-label opacity-40 block mb-2">Mensaje</label>
+          <textarea id="f-msg" name="message" rows="3" class="form-field resize-none"
+            placeholder="Cuéntanos sobre tu proyecto..."></textarea>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <input type="checkbox" id="f-privacy" name="privacy" class="checkbox-custom" required="" aria-required="true">
+          <label for="f-privacy" class="t-body opacity-50 cursor-pointer">
+            Acepto la
+            <a href="#" class="underline hover:opacity-100 transition-opacity">Política de Privacidad</a>
+            y el tratamiento de mis datos.
+          </label>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <button type="submit" class="btn btn-solid self-start">
+            <span class="btn-inner">
+              <span>Enviar consulta</span>
+              <span class="btn-inner-clone" aria-hidden="true"><span>Enviar consulta</span></span>
+            </span>
+          </button>
+          <div id="form-msg" class="hidden t-body p-4 border" style="border-color:var(--border);" role="alert"
+            aria-live="polite"></div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+     §3 · PROJECTS
+════════════════════════════════════════════ -->
+  <section id="proyectos" class="bg-cream pt-24 lg:pt-36">
+    <div class="site-pad">
+
+      <!-- Badge -->
+      <div class="reveal mb-8">
+        <span class="t-badge">Proyectos</span>
+      </div>
+
+      <!-- Header Content -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-12">
+        <h2 class="t-section reveal shrink-0">
+          PROYECTOS DESTACADOS
+        </h2>
+        <p class="t-paragraph reveal reveal-d1" style="max-width: 420px;">
+          Cada proyecto es diseñado de manera única para satisfacer las necesidades específicas de nuestros clientes. Ya
+          sea grande o pequeño, estamos listos para afrontar cualquier tipo de espacio con entusiasmo y experiencia.
+        </p>
+        <a href="proyectos.html" class="btn btn-outline shrink-0">
+          <span class="btn-inner">
+            <span>VER TODOS</span>
+            <span class="btn-inner-clone" aria-hidden="true"><span>VER TODOS</span></span>
+          </span>
+        </a>
+      </div>
+
+      <!-- Reference Grid Layout -->
+      <div class="w-full relative reveal reveal-d2"
+        style="border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="grid grid-cols-1 lg:grid-cols-2">
+
+          <!-- Card 1 -->
+          <a href="#"
+            class="project-card group block py-8 lg:py-12 border-b lg:border-r lg:pr-12 border-solid object-cover"
+            style="border-color: var(--border);" aria-label="Proyecto: Sala principal — Palermo"
+            data-project-title="DISEÑO DE SALA DE ESTAR"
+            data-project-description="El mobiliario fue seleccionado con foco en ergonomía y estilo. Un sofá esquinero y elementos modulares ayudan a crear una experiencia cómoda para relajarse y socializar."
+            data-project-category="LIVING ROOM" data-project-location="Palermo, Buenos Aires"
+            data-project-client="TESORO COMPLEX" data-project-area="64" data-project-year="2024"
+            data-project-style="MODERN"
+            data-project-images="images/proyecto1.jpg,images/proyecto2.jpg,images/proyecto3.jpg">
+            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
+              <img src="images/proyecto1.jpg" alt="Sala Principal"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            </div>
+            <div class="flex items-center justify-between">
+              <h3 class="text-[13px] font-medium tracking-wide uppercase">DISEÑO DE SALA DE ESTAR</h3>
+              <div class="btn btn-solid shrink-0">
+                <span class="btn-inner">
+                  <span>VER</span>
+                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <!-- Card 2 -->
+          <a href="#" class="project-card group block py-8 lg:py-12 border-b lg:pl-12 border-solid"
+            style="border-color: var(--border);" aria-label="Proyecto: Cocina moderna — Recoleta"
+            data-project-title="COCINA MODERNA"
+            data-project-description="Diseño de cocina funcional con circulación fluida, almacenamiento oculto y materiales resistentes. La iluminación en capas mejora el uso diario y realza los acabados."
+            data-project-category="KITCHEN" data-project-location="Recoleta, Buenos Aires"
+            data-project-client="VILAR FAMILY" data-project-area="38" data-project-year="2023"
+            data-project-style="CONTEMPORARY"
+            data-project-images="images/proyecto2.jpg,images/proyecto1.jpg,images/proyecto4.jpg">
+            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
+              <img src="images/proyecto2.jpg" alt="Cocina Moderna"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            </div>
+            <div class="flex items-center justify-between">
+              <h3 class="text-[13px] font-medium tracking-wide uppercase">COCINA MODERNA</h3>
+              <div class="btn btn-solid shrink-0">
+                <span class="btn-inner">
+                  <span>VER</span>
+                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <!-- Card 3 -->
+          <a href="#"
+            class="project-card group block py-8 lg:py-12 border-b lg:border-b-0 lg:border-r lg:pr-12 border-solid"
+            style="border-color: var(--border);" aria-label="Proyecto: Suite principal — Belgrano"
+            data-project-title="SUITE PRINCIPAL"
+            data-project-description="Suite principal pensada para descanso y privacidad. Se trabajó una paleta neutra con texturas suaves y una distribución que integra dormitorio, vestidor y área de lectura."
+            data-project-category="BEDROOM" data-project-location="Belgrano, Buenos Aires"
+            data-project-client="NOVA RESIDENCE" data-project-area="52" data-project-year="2024"
+            data-project-style="WARM MINIMAL"
+            data-project-images="images/proyecto3.jpg,images/proyecto2.jpg,images/proyecto1.jpg">
+            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
+              <img src="images/proyecto3.jpg" alt="Suite Principal"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            </div>
+            <div class="flex items-center justify-between">
+              <h3 class="text-[13px] font-medium tracking-wide uppercase">SUITE PRINCIPAL</h3>
+              <div class="btn btn-solid shrink-0">
+                <span class="btn-inner">
+                  <span>VER</span>
+                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
+                </span>
+              </div>
+            </div>
+          </a>
+
+          <!-- Card 4 -->
+          <a href="#" class="project-card group block py-8 lg:py-12 border-b-0 lg:pl-12 border-solid"
+            style="border-color: var(--border);" aria-label="Proyecto: Oficina ejecutiva — Puerto Madero"
+            data-project-title="OFICINA EJECUTIVA"
+            data-project-description="Proyecto corporativo con foco en presencia de marca, confort acústico y productividad. Se incorporaron zonas de reunión y trabajo flexible en un mismo lenguaje visual."
+            data-project-category="OFFICE" data-project-location="Puerto Madero, Buenos Aires"
+            data-project-client="ALTA CAPITAL" data-project-area="72" data-project-year="2024"
+            data-project-style="MODERN"
+            data-project-images="images/proyecto4.jpg,images/proyecto2.jpg,images/proyecto3.jpg">
+            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
+              <img src="images/proyecto4.jpg" alt="Oficina Ejecutiva"
+                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            </div>
+            <div class="flex items-center justify-between">
+              <h3 class="text-[13px] font-medium tracking-wide uppercase">OFICINA EJECUTIVA</h3>
+              <div class="btn btn-solid shrink-0">
+                <span class="btn-inner">
+                  <span>VER</span>
+                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
+                </span>
+              </div>
+            </div>
+          </a>
+
+        </div>
+
+      </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════
+     §4 · SERVICES
+════════════════════════════════════════════ -->
+  <section id="servicios" class="bg-cream w-full relative py-24 lg:py-36">
+    <div class="w-full px-6 md:px-12 lg:px-[5%] xl:px-[5%]">
+      <div class="flex flex-col lg:flex-row items-start w-full gap-8 lg:gap-8 xl:gap-[4%]">
+
+        <!-- FIX IMAGE: Full height, sticky on scroll -->
+        <div
+          class="w-full lg:w-1/2 lg:sticky lg:top-24 xl:top-32 h-[60vh] lg:h-[75vh] reveal overflow-hidden self-start">
+          <img src="images/proyecto4.jpg" alt="Espacio interior diseñado por Ritta Estudio"
+            class="w-full h-full object-cover">
+        </div>
+
+        <!-- SCROLLING TEXT: Free to scroll past the fixed image -->
+        <div class="w-full lg:w-1/2 services-copy">
+          <span class="t-badge reveal mb-8">Nuestros servicios</span>
+          <h2 class="t-section reveal reveal-d1 mb-6">POSIBILIDADES INSPIRADORAS,<br>DEFINIENDO ESPACIOS</h2>
+          <p class="t-paragraph reveal reveal-d2">
+            Estamos complacidos en ofrecerte una propuesta personalizada para el diseño de interiores, que no solo
+            busca crear un espacio estético y funcional, sino que también aporta emoción atemporal y estilo de vida a
+            cada
+            rincón de tu hogar. Revisa la descripción detallada de nuestros servicios a continuación y no dudes en
+            contactarnos
+            para brindarte más información o alistar una reunión donde poder hacer realidad tus necesidades y proyectos.
+          </p>
+
+          <!-- Using SVG arrows that rotate on hover for a perfect match -->
+          <div class="services-list">
+            <button type="button" class="service-row reveal reveal-d1" data-contact-open=""
+              data-service="Living room design">
+              <span>DISEÑO DE SALA DE ESTAR</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d2" data-contact-open="" data-service="3D rendering">
+              <span>RENDERIZADO 3D</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d3" data-contact-open=""
+              data-service="Detailing floorplans and layout">
+              <span>PLANOS DETALLADOS Y DISTRIBUCIÓN</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d4" data-contact-open=""
+              data-service="Technical drawing">
+              <span>DIBUJO TÉCNICO</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d1" data-contact-open=""
+              data-service="Budget planning">
+              <span>PLANIFICACIÓN DE PRESUPUESTO</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d2" data-contact-open="" data-service="Sourcing">
+              <span>ABASTECIMIENTO Y COMPRAS</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d3" data-contact-open=""
+              data-service="Private visits to showrooms &amp; factories">
+              <span>VISITAS PRIVADAS A SHOWROOMS Y FÁBRICAS</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d4" data-contact-open=""
+              data-service="Author supervision">
+              <span>SUPERVISIÓN DE OBRA</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d1" data-contact-open=""
+              data-service="Supply and logistic management">
+              <span>GESTIÓN DE LOGÍSTICA Y SUMINISTROS</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d2" data-contact-open=""
+              data-service="Space decoration">
+              <span>DECORACIÓN DE ESPACIOS</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+
+            <button type="button" class="service-row reveal reveal-d3" data-contact-open=""
+              data-service="Consultancy and support">
+              <span>CONSULTANCY AND FULL SUPPORT</span>
+              <svg class="service-row__arrow" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M1 13L13 1M13 1H4M13 1V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                </path>
+              </svg>
+            </button>
+          </div>
+          <div class="services-cta mt-12 reveal reveal-d4">
+            <button type="button" class="btn btn-outline" data-contact-open="">
+              <span class="btn-inner">
+                <span>CONTACTARME
+                  <span class="btn-dot" aria-hidden="true"></span></span>
+                <span class="btn-inner-clone" aria-hidden="true"><span>GET IN TOUCH
+                    <span class="btn-dot" aria-hidden="true"></span></span></span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <hr class="rule">
+
+
+  <!-- ════════════════════════════════════════════
+     §5 · FOOTER
+════════════════════════════════════════════ -->
+  <footer class="bg-cream py-16 lg:py-20" role="contentinfo">
+    <div class="max-w-site mx-auto site-pad">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
+        <div class="sm:col-span-2">
+          <a href="#inicio" class="t-label font-bold tracking-[0.16em] text-ink no-underline text-base">
+            RITTA ESTUDIO
+          </a>
+          <p class="t-body opacity-50 mt-4 max-w-xs">
+            Diseño de interiores que transforma espacios ordinarios en experiencias extraordinarias.
+          </p>
+          <div class="flex gap-5 mt-6">
+            <a href="#" class="opacity-35 hover:opacity-80 transition-opacity" aria-label="Instagram">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+                <circle cx="12" cy="12" r="4"></circle>
+                <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none"></circle>
+              </svg>
+            </a>
+            <a href="#" class="opacity-35 hover:opacity-80 transition-opacity" aria-label="Pinterest">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12c0 4.24 2.65 7.86 6.39 9.29-.09-.78-.17-1.98.03-2.83.2-.77 1.28-5.38 1.28-5.38s-.32-.65-.32-1.6c0-1.5.87-2.63 1.95-2.63.92 0 1.37.69 1.37 1.52 0 .93-.59 2.32-.9 3.6-.26 1.08.54 1.95 1.6 1.95 1.91 0 3.39-2.02 3.39-4.93 0-2.58-1.85-4.38-4.5-4.38-3.06 0-4.86 2.3-4.86 4.67 0 .93.36 1.92.8 2.46.09.11.1.2.07.31-.08.34-.27 1.08-.3 1.23-.05.2-.17.24-.38.14-1.39-.65-2.26-2.69-2.26-4.33 0-3.51 2.55-6.74 7.36-6.74 3.86 0 6.86 2.75 6.86 6.42 0 3.83-2.41 6.91-5.76 6.91-1.12 0-2.18-.58-2.55-1.27l-.69 2.59c-.25.97-.93 2.18-1.39 2.92.41.13.85.2 1.3.2C17.52 22 22 17.52 22 12S17.52 2 12 2z">
+                </path>
+              </svg>
+            </a>
+            <a href="#" class="opacity-35 hover:opacity-80 transition-opacity" aria-label="LinkedIn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="3"></rect>
+                <path d="M7 10v7M7 7v.01M11 17v-4a2 2 0 014 0v4M11 10v7"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <div class="t-label opacity-40 mb-5">Navegación</div>
+          <nav class="flex flex-col gap-3" aria-label="Pie de página">
+            <a href="#nosotros" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Nosotros</a>
+            <a href="#proyectos"
+              class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Proyectos</a>
+            <a href="#servicios"
+              class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">Servicios</a>
+            <a href="#" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline"
+              data-contact-open="">Contacto</a>
+          </nav>
+        </div>
+
+        <div>
+          <div class="t-label opacity-40 mb-5">Contacto</div>
+          <div class="flex flex-col gap-3">
+            <a href="tel:+5491112345678" class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">+54
+              9 11 1234-5678</a>
+            <a href="mailto:hola@rittaestudio.com"
+              class="t-body opacity-55 hover:opacity-100 transition-opacity no-underline">hola@rittaestudio.com</a>
+            <address class="not-italic t-body opacity-55 leading-relaxed">
+              Av. Corrientes 1234<br>Buenos Aires, Argentina
+            </address>
+          </div>
+        </div>
+      </div>
+
+      <hr class="rule mb-7">
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <p class="t-label opacity-30">© 2024 Ritta Estudio. Todos los derechos reservados.</p>
+        <div class="flex gap-6">
+          <a href="#" class="t-label opacity-30 hover:opacity-60 transition-opacity no-underline">Privacidad</a>
+          <a href="#" class="t-label opacity-30 hover:opacity-60 transition-opacity no-underline">Términos</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <a class="whatsapp-fab" href="https://wa.me/541167445500" target="_blank" rel="noopener noreferrer"
+    aria-label="Enviar mensaje por WhatsApp">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor"
+        d="M20.52 3.48A11.87 11.87 0 0 0 12.05 0C5.49 0 .16 5.33.16 11.89c0 2.1.55 4.15 1.6 5.95L0 24l6.35-1.67a11.85 11.85 0 0 0 5.7 1.45h.01c6.56 0 11.89-5.33 11.89-11.89 0-3.18-1.24-6.17-3.43-8.41zm-8.47 18.3h-.01a9.86 9.86 0 0 1-5.02-1.38l-.36-.21-3.77.99 1-3.67-.23-.38a9.85 9.85 0 0 1-1.5-5.24c0-5.45 4.44-9.89 9.9-9.89 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.9 6.99c0 5.46-4.44 9.89-9.9 9.89zm5.43-7.42c-.3-.15-1.76-.87-2.03-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.95 1.16-.17.2-.35.23-.65.08-.3-.15-1.28-.47-2.43-1.51-.9-.8-1.5-1.8-1.67-2.1-.18-.3-.02-.46.13-.6.14-.14.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.01-1.04 2.47 0 1.45 1.07 2.86 1.22 3.06.15.2 2.1 3.2 5.08 4.49.7.3 1.25.48 1.68.62.7.22 1.33.18 1.83.11.56-.08 1.76-.72 2-1.41.25-.69.25-1.28.17-1.41-.08-.13-.27-.2-.57-.35z">
+      </path>
+    </svg>
+    <span>WhatsApp</span>
+  </a>
+
+
+  <!-- Scroll-to-top -->
+  <button id="scroll-top" aria-label="Volver al inicio">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M8 12V4M3 8l5-5 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </button>
+
+
+  <!-- ════════════════════════════════════════════
+     JAVASCRIPT
+     Load order:
+       1. GSAP + ScrollTrigger (deferred in <head>)
+       2. This inline script (waits for DOMContentLoaded)
+════════════════════════════════════════════ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      /* ── Prefers-reduced-motion check ── */
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ──────────────────────────────────────────
+         1. HERO ENTRANCE — GSAP
+         ① Title lines: clip-from-bottom (yPercent 110→0)
+            Line 1: delay 0ms, Line 2: delay 150ms
+         ② Supporting elements: opacity+y fade-in after title
+         ③ Hero image: zoom-out (scale 1.1 → 1.0) on load
+      ────────────────────────────────────────── */
+      if (!reduced && typeof gsap !== 'undefined') {
+
+        /* Set initial states */
+        gsap.set('.hero-line-inner', { visibility: 'visible', yPercent: 110 });
+        gsap.set(['#hero-label', '#hero-sub', '#hero-cta'], { opacity: 0, y: 18 });
+        gsap.set('#hero-img-inner', { scale: 1.08, transformOrigin: 'center center' });
+        gsap.set('#hero-curtain', { scaleY: 1, transformOrigin: 'top' });
+
+        /*
+          Timing:
+            0ms   → línea 1 empieza reveal
+            150ms → línea 2 empieza reveal  (stagger 0.15)
+            300ms → subtexto + botones fade-in
+            0ms   → imagen zoom-out simultáneo con el título
+        */
+
+        /* ① Título línea por línea */
+        gsap.to('.hero-line-inner', {
+          yPercent: 0,
+          duration: 1.1,
+          ease: 'power3.out',
+          stagger: 0.15,
+          delay: 0,
+        });
+
+        /* ② Subtexto + botones */
+        gsap.to(['#hero-label', '#hero-sub', '#hero-cta'], {
+          opacity: 1,
+          y: 0,
+          duration: 0.75,
+          ease: 'power2.out',
+          stagger: 0.08,
+          delay: 0.3,
+        });
+
+        /* ③ Imagen: curtain sube + zoom-out simultáneos */
+        gsap.to('#hero-curtain', {
+          scaleY: 0,
+          duration: 1.1,
+          ease: 'power3.inOut',
+          delay: 0.2,
+        });
+        gsap.to('#hero-img-inner', {
+          scale: 1,
+          duration: 1.8,
+          ease: 'power2.out',
+          delay: 0.2,
+        });
+
+      } else {
+        /* Fallback: mostrar todo inmediatamente */
+        document.querySelectorAll('.hero-line-inner').forEach(el => {
+          el.style.visibility = 'visible';
+        });
+        const heroImg = document.getElementById('hero-img-inner');
+        if (heroImg) heroImg.style.transform = 'none';
+        const curtain = document.getElementById('hero-curtain');
+        if (curtain) curtain.style.display = 'none';
+      }
+
+      /* ──────────────────────────────────────────
+         2. SCROLL REVEALS — GSAP ScrollTrigger
+         Replaces the previous Intersection Observer + CSS approach.
+         Every .reveal element fades + slides up 40px when entering viewport.
+         .reveal-d1/d2/d3/d4 add staggered delays within a section.
+      ────────────────────────────────────────── */
+      if (!reduced && typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        const delayMap = {
+          'reveal-d1': 0.08,
+          'reveal-d2': 0.17,
+          'reveal-d3': 0.26,
+          'reveal-d4': 0.35,
+        };
+
+        document.querySelectorAll('.reveal').forEach(el => {
+          /* Determine delay from modifier class */
+          let delay = 0;
+          for (const [cls, val] of Object.entries(delayMap)) {
+            if (el.classList.contains(cls)) { delay = val; break; }
+          }
+
+          gsap.fromTo(el,
+            { opacity: 0, y: 40 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.75,
+              delay,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: el,
+                start: 'top 88%',
+                once: true,    /* fires only once, then disconnects */
+              },
+            }
+          );
+        });
+
+      } else {
+        /* Fallback for reduced-motion or if GSAP fails to load */
+        document.querySelectorAll('.reveal').forEach(el => {
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        });
+      }
+
+      /* ──────────────────────────────────────────
+         3. ANIMATED COUNTERS
+         Counts from 0 → data-count over 2s with cubic easeOut.
+         Triggered once when the stat grid enters the viewport.
+      ────────────────────────────────────────── */
+      function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+      function animateCounter(el) {
+        const target = parseInt(el.dataset.count, 10);
+        const suffix = el.dataset.suffix || '';
+        const duration = 2000; /* 2s */
+        const startTs = performance.now();
+
+        function tick(now) {
+          const elapsed = now - startTs;
+          const progress = Math.min(elapsed / duration, 1);
+          const value = Math.round(easeOutCubic(progress) * target);
+          el.textContent = value + suffix;
+          if (progress < 1) requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      /* Reset counters to "0" so they start from zero */
+      const counterEls = document.querySelectorAll('[data-count]');
+      counterEls.forEach(el => {
+        el.textContent = '0' + (el.dataset.suffix || '');
+      });
+
+      const counterIO = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            if (!reduced) {
+              animateCounter(entry.target);
+            } else {
+              /* Show final value immediately */
+              const el = entry.target;
+              el.textContent = el.dataset.count + (el.dataset.suffix || '');
+            }
+            counterIO.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      counterEls.forEach(el => counterIO.observe(el));
+
+      /* ──────────────────────────────────────────
+         4. SMART HEADER — 300ms, hide on down, show on up
+      ────────────────────────────────────────── */
+      const header = document.getElementById('site-header');
+      const scrollBtn = document.getElementById('scroll-top');
+      let lastY = 0, ticking = false;
+
+      window.addEventListener('scroll', () => {
+        if (ticking) return;
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+
+          if (y > 80) {
+            if (y > lastY) {
+              header.classList.add('header-hidden');
+            } else {
+              header.classList.remove('header-hidden');
+            }
+          } else {
+            header.classList.remove('header-hidden');
+          }
+
+          scrollBtn.classList.toggle('visible', y > 500);
+          lastY = y;
+          ticking = false;
+        });
+        ticking = true;
+      }, { passive: true });
+
+      scrollBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      /* ──────────────────────────────────────────
+         5. SMOOTH SCROLL WITH HEADER OFFSET
+         Intercepts all href="#…" clicks and scrolls
+         to the target minus the fixed header height.
+      ────────────────────────────────────────── */
+      const NAV_H = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue('--nav-h')
+      ) || 56;
+
+      document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', e => {
+          const hash = link.getAttribute('href');
+          if (!hash || hash.length < 2) return;
+          const target = document.querySelector(hash);
+          if (!target) return;
+
+          e.preventDefault();
+
+          /* Extra 16px breathing room below the header */
+          const top = target.getBoundingClientRect().top + window.scrollY - NAV_H - 16;
+          window.scrollTo({ top, behavior: 'smooth' });
+
+          /* Update URL without jumping */
+          history.pushState(null, '', hash);
+        });
+      });
+
+      /* ──────────────────────────────────────────
+         6. CUSTOM CURSOR
+         Ring (#cursor) follows with a smooth lag (lerp).
+         Dot (#cursor-dot) snaps to exact mouse position.
+         Expands (.cursor-hover) over interactive elements.
+      ────────────────────────────────────────── */
+      const cursor = document.getElementById('cursor');
+      const cursorDot = document.getElementById('cursor-dot');
+      const hasMouse = window.matchMedia('(pointer: fine)').matches;
+
+      if (hasMouse && !reduced) {
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let ringX = mouseX;
+        let ringY = mouseY;
+        let rafRunning = false;
+
+        /* Show cursors on first mouse move */
+        document.addEventListener('mousemove', e => {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+
+          /* Reveal on first interaction */
+          cursor.style.opacity = '1';
+          cursorDot.style.opacity = '1';
+
+          /* Dot follows instantly */
+          cursorDot.style.transform =
+            `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
+
+          if (!rafRunning) {
+            rafRunning = true;
+            animateRing();
+          }
+        }, { passive: true });
+
+        /* Ring follows with lerp for smooth lag */
+        function animateRing() {
+          const lerpFactor = 0.12;
+          ringX += (mouseX - ringX) * lerpFactor;
+          ringY += (mouseY - ringY) * lerpFactor;
+
+          cursor.style.transform =
+            `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`;
+
+          requestAnimationFrame(animateRing);
+        }
+
+        /* Expand ring when hovering interactive elements */
+        const hoverTargets =
+          'a, button, [tabindex], .project-card, .service-row, label, select, input, textarea';
+
+        document.querySelectorAll(hoverTargets).forEach(el => {
+          el.addEventListener('mouseenter', () => cursor.classList.add('cursor-hover'));
+          el.addEventListener('mouseleave', () => cursor.classList.remove('cursor-hover'));
+        });
+
+        /* Hide cursor when leaving window */
+        document.addEventListener('mouseleave', () => {
+          cursor.style.opacity = '0';
+          cursorDot.style.opacity = '0';
+        });
+
+        document.addEventListener('mouseenter', () => {
+          cursor.style.opacity = '1';
+          cursorDot.style.opacity = '1';
+        });
+
+      } else {
+        /* Hide custom cursor on touch / reduced-motion */
+        cursor.style.display = 'none';
+        cursorDot.style.display = 'none';
+      }
+
+      /* ──────────────────────────────────────────
+         7. MOBILE MENU
+      ────────────────────────────────────────── */
+      const hamburger = document.getElementById('hamburger');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const mobileClose = document.getElementById('mobile-close');
+      const contactModal = document.getElementById('contact-modal');
+      const contactCloseTargets = document.querySelectorAll('[data-contact-close]');
+      const contactOpenTargets = document.querySelectorAll('[data-contact-open]');
+      let lastContactTrigger = null;
+
+      function updateBodyScrollLock() {
+        const hasOpenLayer =
+          mobileMenu.classList.contains('open') ||
+          projectModal.classList.contains('open') ||
+          contactModal.classList.contains('open');
+        document.body.style.overflow = hasOpenLayer ? 'hidden' : '';
+      }
+
+      function openMenu() {
+        mobileMenu.classList.add('open');
+        hamburger.setAttribute('aria-expanded', 'true');
+        updateBodyScrollLock();
+        mobileClose.focus();
+      }
+
+      function closeMenu() {
+        mobileMenu.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+        updateBodyScrollLock();
+        hamburger.focus();
+      }
+
+      hamburger.addEventListener('click', openMenu);
+      mobileClose.addEventListener('click', closeMenu);
+      document.querySelectorAll('[data-close-menu]').forEach(el =>
+        el.addEventListener('click', closeMenu)
+      );
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && mobileMenu.classList.contains('open')) closeMenu();
+      });
+
+      function openContactModal(triggerEl, requestedService = '') {
+        lastContactTrigger = triggerEl || document.activeElement;
+        contactModal.classList.add('open');
+        contactModal.setAttribute('aria-hidden', 'false');
+        updateBodyScrollLock();
+        const serviceField = document.getElementById('f-service');
+        if (serviceField && requestedService) {
+          const exactOption = Array.from(serviceField.options).find(opt => opt.value === requestedService);
+          serviceField.value = exactOption ? exactOption.value : '';
+        }
+        contactModal.querySelector('.contact-modal__close')?.focus();
+      }
+
+      function closeContactModal() {
+        if (!contactModal.classList.contains('open')) return;
+        contactModal.classList.remove('open');
+        contactModal.setAttribute('aria-hidden', 'true');
+        updateBodyScrollLock();
+        if (lastContactTrigger && typeof lastContactTrigger.focus === 'function') {
+          lastContactTrigger.focus();
+        }
+      }
+
+      contactOpenTargets.forEach(el => {
+        el.addEventListener('click', e => {
+          e.preventDefault();
+          if (projectModal.classList.contains('open')) closeProjectModal();
+          openContactModal(el, el.dataset.service || '');
+        });
+      });
+
+      contactCloseTargets.forEach(el => {
+        el.addEventListener('click', closeContactModal);
+      });
+
+      /* ──────────────────────────────────────────
+         8. CONTACT FORM
+      ────────────────────────────────────────── */
+      window.handleSubmit = function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const msgEl = document.getElementById('form-msg');
+        const submitBtn = form.querySelector('[type="submit"]');
+
+        let firstInvalid = null;
+        form.querySelectorAll('[required]').forEach(field => {
+          const empty = field.type === 'checkbox' ? !field.checked : !field.value.trim();
+          if (empty && !firstInvalid) firstInvalid = field;
+        });
+
+        if (firstInvalid) {
+          firstInvalid.focus();
+          msgEl.textContent = 'Por favor completá los campos obligatorios.';
+          msgEl.classList.remove('hidden');
+          return;
+        }
+
+        submitBtn.textContent = 'Enviando...';
+        submitBtn.disabled = true;
+        msgEl.classList.add('hidden');
+
+        setTimeout(() => {
+          form.reset();
+          submitBtn.textContent = 'Enviar consulta';
+          submitBtn.disabled = false;
+          msgEl.textContent = '¡Mensaje enviado! Nos contactaremos contigo en breve.';
+          msgEl.classList.remove('hidden');
+          setTimeout(() => msgEl.classList.add('hidden'), 6000);
+        }, 1200);
+      };
+
+      /* ──────────────────────────────────────────
+         9. PROJECT DETAIL MODAL
+      ────────────────────────────────────────── */
+      const projectModal = document.getElementById('project-modal');
+      const projectModalTitle = document.getElementById('project-modal-title');
+      const projectModalDesc = document.getElementById('project-modal-description');
+      const projectModalClient = document.getElementById('project-modal-client');
+      const projectModalArea = document.getElementById('project-modal-area');
+      const projectModalCategory = document.getElementById('project-modal-category');
+      const projectModalLocation = document.getElementById('project-modal-location');
+      const projectModalYear = document.getElementById('project-modal-year');
+      const projectModalStyle = document.getElementById('project-modal-style');
+      const projectModalImage = document.getElementById('project-modal-image');
+      const projectModalCounter = document.getElementById('project-modal-counter');
+      const projectModalThumbs = document.getElementById('project-modal-thumbs');
+      const projectModalPrev = document.getElementById('project-modal-prev');
+      const projectModalNext = document.getElementById('project-modal-next');
+      const modalCloseTargets = projectModal.querySelectorAll('[data-project-close]');
+      let lastFocusedProjectCard = null;
+      let activeProjectImages = [];
+      let activeImageIndex = 0;
+      let touchStartX = null;
+      let touchStartY = null;
+
+      function getProjectImages(card) {
+        const images = (card.dataset.projectImages || '')
+          .split(',')
+          .map(src => src.trim())
+          .filter(Boolean);
+
+        if (images.length === 0) {
+          const fallback = card.querySelector('.card-img')?.getAttribute('src');
+          return fallback ? [fallback] : [];
+        }
+
+        return images;
+      }
+
+      function updateProjectNavState() {
+        const hasMultiple = activeProjectImages.length > 1;
+        projectModalPrev.disabled = !hasMultiple;
+        projectModalNext.disabled = !hasMultiple;
+        projectModalCounter.textContent = `${activeImageIndex + 1} / ${Math.max(activeProjectImages.length, 1)}`;
+      }
+
+      function selectProjectImage(images, activeIndex, animate = true) {
+        const selected = images[activeIndex];
+        if (!selected) return;
+
+        activeImageIndex = activeIndex;
+        if (animate) projectModalImage.classList.add('is-changing');
+        projectModalImage.src = selected;
+        projectModalImage.alt = `${projectModalTitle.textContent} - image ${activeIndex + 1}`;
+
+        projectModalThumbs.querySelectorAll('.project-modal__thumb').forEach((thumb, idx) => {
+          thumb.classList.toggle('is-active', idx === activeIndex);
+          thumb.setAttribute('aria-current', idx === activeIndex ? 'true' : 'false');
+        });
+
+        updateProjectNavState();
+      }
+
+      function buildProjectThumbs(images) {
+        projectModalThumbs.innerHTML = '';
+
+        images.forEach((src, index) => {
+          const thumb = document.createElement('button');
+          thumb.type = 'button';
+          thumb.className = 'project-modal__thumb';
+          thumb.setAttribute('aria-label', `Ver imagen ${index + 1}`);
+
+          const image = document.createElement('img');
+          image.src = src;
+          image.alt = '';
+          thumb.appendChild(image);
+
+          thumb.addEventListener('click', () => selectProjectImage(images, index));
+          projectModalThumbs.appendChild(thumb);
+        });
+      }
+
+      function goToProjectImage(step) {
+        if (activeProjectImages.length <= 1) return;
+        const nextIndex = (activeImageIndex + step + activeProjectImages.length) % activeProjectImages.length;
+        selectProjectImage(activeProjectImages, nextIndex);
+      }
+
+      function openProjectModal(card) {
+        const images = getProjectImages(card);
+        if (!images.length) return;
+
+        lastFocusedProjectCard = card;
+        projectModalTitle.textContent = card.dataset.projectTitle || 'PROJECT';
+        projectModalDesc.textContent = card.dataset.projectDescription || '';
+        projectModalClient.textContent = card.dataset.projectClient || '-';
+        projectModalArea.textContent = card.dataset.projectArea || '-';
+        projectModalCategory.textContent = card.dataset.projectCategory || '-';
+        projectModalLocation.textContent = card.dataset.projectLocation || '-';
+        projectModalYear.textContent = card.dataset.projectYear || '-';
+        projectModalStyle.textContent = card.dataset.projectStyle || '-';
+
+        activeProjectImages = images;
+        activeImageIndex = 0;
+        buildProjectThumbs(activeProjectImages);
+        selectProjectImage(activeProjectImages, 0, false);
+
+        projectModal.classList.add('open');
+        projectModal.setAttribute('aria-hidden', 'false');
+        updateBodyScrollLock();
+        projectModal.querySelector('.project-modal__close')?.focus();
+      }
+
+      function closeProjectModal() {
+        if (!projectModal.classList.contains('open')) return;
+        projectModal.classList.remove('open');
+        projectModal.setAttribute('aria-hidden', 'true');
+        updateBodyScrollLock();
+        activeProjectImages = [];
+        activeImageIndex = 0;
+        if (lastFocusedProjectCard) lastFocusedProjectCard.focus();
+      }
+
+      document.querySelectorAll('.project-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          openProjectModal(card);
+        });
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openProjectModal(card);
+          }
+        });
+      });
+
+      modalCloseTargets.forEach(el => {
+        el.addEventListener('click', closeProjectModal);
+      });
+
+      projectModalPrev.addEventListener('click', () => goToProjectImage(-1));
+      projectModalNext.addEventListener('click', () => goToProjectImage(1));
+
+      projectModalImage.addEventListener('transitionend', e => {
+        if (e.propertyName === 'opacity') projectModalImage.classList.remove('is-changing');
+      });
+
+      projectModalImage.addEventListener('touchstart', e => {
+        const point = e.changedTouches[0];
+        touchStartX = point.clientX;
+        touchStartY = point.clientY;
+      }, { passive: true });
+
+      projectModalImage.addEventListener('touchend', e => {
+        if (touchStartX === null || touchStartY === null) return;
+        const point = e.changedTouches[0];
+        const deltaX = point.clientX - touchStartX;
+        const deltaY = point.clientY - touchStartY;
+        touchStartX = null;
+        touchStartY = null;
+
+        if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+        if (deltaX < 0) goToProjectImage(1);
+        else goToProjectImage(-1);
+      }, { passive: true });
+
+      document.addEventListener('keydown', e => {
+        if (!projectModal.classList.contains('open')) return;
+        if (e.key === 'Escape') closeProjectModal();
+        if (e.key === 'ArrowLeft') goToProjectImage(-1);
+        if (e.key === 'ArrowRight') goToProjectImage(1);
+      });
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && contactModal.classList.contains('open')) closeContactModal();
+      });
+
+    }); /* end DOMContentLoaded */
+  </script>
+
+
+
+</body>
+
+</html>
