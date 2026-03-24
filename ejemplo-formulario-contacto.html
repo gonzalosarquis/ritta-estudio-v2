@@ -103,75 +103,83 @@
 </div>
 
 <script>
-  // Configuración Supabase
-  const SUPABASE_URL = 'https://mefqkijoijoxqjledkib.supabase.co'
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZnFraWpvaWpveHFqbGVka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODk2OTUsImV4cCI6MjA4OTk2NTY5NX0.HR4sPGhk0zH5uhulwhBWCzpCDkjmMFDte218Zsh_rDY'
+  // Esperar a que Supabase esté cargado
+  setTimeout(() => {
+    // Configuración Supabase
+    const SUPABASE_URL = 'https://mefqkijoijoxqjledkib.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZnFraWpvaWpveHFqbGVka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODk2OTUsImV4cCI6MjA4OTk2NTY5NX0.HR4sPGhk0zH5uhulwhBWCzpCDkjmMFDte218Zsh_rDY'
 
-  const { createClient } = window.supabase
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    if (!window.supabase) {
+      console.error('Supabase no cargó. Recarga la página.')
+      return
+    }
 
-  // Elementos del DOM
-  const form = document.getElementById('contactForm')
-  const statusDiv = document.getElementById('status')
-  const submitBtn = document.getElementById('submitBtn')
+    const { createClient } = window.supabase
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-  // Escuchar envío del formulario
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault()
+    // Elementos del DOM
+    const form = document.getElementById('contactForm')
+    const statusDiv = document.getElementById('status')
+    const submitBtn = document.getElementById('submitBtn')
 
-    // Deshabilitar botón
-    submitBtn.disabled = true
-    submitBtn.textContent = 'Enviando...'
+    // Escuchar envío del formulario
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
 
-    try {
-      // Obtener datos del formulario
-      const email = document.getElementById('email').value
-      const name = document.getElementById('name').value
-      const phone = document.getElementById('phone').value || null
-      const message = document.getElementById('message').value
+      // Deshabilitar botón
+      submitBtn.disabled = true
+      submitBtn.textContent = 'Enviando...'
 
-      // Guardar en Supabase
-      const { data, error } = await supabase
-        .from('contacts')
-        .insert([{
-          email,
-          name,
-          phone,
-          message,
-          created_at: new Date().toISOString(),
-          status: 'nuevo'
-        }])
+      try {
+        // Obtener datos del formulario
+        const email = document.getElementById('email').value
+        const name = document.getElementById('name').value
+        const phone = document.getElementById('phone').value || null
+        const message = document.getElementById('message').value
 
-      if (error) throw error
+        // Guardar en Supabase
+        const { data, error } = await supabaseClient
+          .from('contacts')
+          .insert([{
+            email,
+            name,
+            phone,
+            message,
+            created_at: new Date().toISOString(),
+            status: 'nuevo'
+          }])
 
-      // ✅ Éxito
-      statusDiv.classList.remove('hidden', 'bg-red-100', 'text-red-800')
-      statusDiv.classList.add('bg-green-100', 'text-green-800')
-      statusDiv.textContent = '✅ ¡Mensaje enviado! Gracias por contactarnos.'
+        if (error) throw error
 
-      // Limpiar formulario
-      form.reset()
+        // ✅ Éxito
+        statusDiv.classList.remove('hidden', 'bg-red-100', 'text-red-800')
+        statusDiv.classList.add('bg-green-100', 'text-green-800')
+        statusDiv.textContent = '✅ ¡Mensaje enviado! Gracias por contactarnos.'
 
-      // Reactivar botón después de 3 segundos
-      setTimeout(() => {
+        // Limpiar formulario
+        form.reset()
+
+        // Reactivar botón después de 3 segundos
+        setTimeout(() => {
+          submitBtn.disabled = false
+          submitBtn.textContent = 'Enviar mensaje'
+          statusDiv.classList.add('hidden')
+        }, 3000)
+
+      } catch (error) {
+        console.error('Error:', error)
+
+        // ❌ Error
+        statusDiv.classList.remove('hidden', 'bg-green-100', 'text-green-800')
+        statusDiv.classList.add('bg-red-100', 'text-red-800')
+        statusDiv.textContent = '❌ Error: ' + (error.message || 'Error desconocido')
+
+        // Reactivar botón
         submitBtn.disabled = false
         submitBtn.textContent = 'Enviar mensaje'
-        statusDiv.classList.add('hidden')
-      }, 3000)
-
-    } catch (error) {
-      console.error('Error:', error)
-
-      // ❌ Error
-      statusDiv.classList.remove('hidden', 'bg-green-100', 'text-green-800')
-      statusDiv.classList.add('bg-red-100', 'text-red-800')
-      statusDiv.textContent = '❌ Error: ' + error.message
-
-      // Reactivar botón
-      submitBtn.disabled = false
-      submitBtn.textContent = 'Enviar mensaje'
-    }
-  })
+      }
+    })
+  }, 500)
 </script>
 
 </body>
