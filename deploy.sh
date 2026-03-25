@@ -8,9 +8,9 @@ set -e  # Detener si hay error
 echo "🚀 Iniciando despliegue de Ritta Estudio v2..."
 echo ""
 
-# Variables
+# Variables - REEMPLAZA TU_TOKEN CON TU GITHUB TOKEN
 GITHUB_USER="gonzalosarquis"
-GITHUB_TOKEN="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"
+GITHUB_TOKEN="TU_GITHUB_TOKEN_AQUI"
 REPO_NAME="ritta-estudio-v2"
 GITHUB_URL="https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git"
 

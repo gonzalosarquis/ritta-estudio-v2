@@ -8,9 +8,9 @@ echo.
 echo 🚀 Iniciando despliegue de Ritta Estudio v2...
 echo.
 
-REM Variables
+REM Variables - REEMPLAZA TU_TOKEN CON TU GITHUB TOKEN
 set GITHUB_USER=gonzalosarquis
-set GITHUB_TOKEN=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
+set GITHUB_TOKEN=TU_GITHUB_TOKEN_AQUI
 set REPO_NAME=ritta-estudio-v2
 set GITHUB_URL=https://%GITHUB_USER%:%GITHUB_TOKEN%@github.com/%GITHUB_USER%/%REPO_NAME%.git
 

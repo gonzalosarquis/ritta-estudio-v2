@@ -2375,7 +2375,7 @@
       /* ──────────────────────────────────────────
          8. CONTACT FORM
       ────────────────────────────────────────── */
-      window.handleSubmit = function (e) {
+      window.handleSubmit = async function (e) {
         e.preventDefault();
         const form = e.target;
         const msgEl = document.getElementById('form-msg');
@@ -2398,14 +2398,60 @@
         submitBtn.disabled = true;
         msgEl.classList.add('hidden');
 
-        setTimeout(() => {
-          form.reset();
+        try {
+          // 1. Guardar en Supabase
+          const supabaseUrl = 'https://mefqkijoijoxqjledkib.supabase.co';
+          const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZnFraWpvaWpveHFqbGVka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODk2OTUsImV4cCI6MjA4OTk2NTY5NX0.HR4sPGhk0zH5uhulwhBWCzpCDkjmMFDte218Zsh_rDY';
+
+          const contactData = {
+            name: form.querySelector('#f-name').value,
+            email: form.querySelector('#f-email').value,
+            phone: form.querySelector('#f-phone').value || null,
+            service: form.querySelector('#f-service').value || null,
+            message: form.querySelector('#f-msg').value,
+            status: 'nuevo',
+            created_at: new Date().toISOString()
+          };
+
+          // Guardar en Supabase
+          const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/contacts`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`
+            },
+            body: JSON.stringify(contactData)
+          });
+
+          // 2. Enviar a Formspree para email
+          const formspreeData = new FormData(form);
+          const formspreeResponse = await fetch('https://formspree.io/f/xzdkpjdo', {
+            method: 'POST',
+            body: formspreeData,
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (formspreeResponse.ok) {
+            form.reset();
+            submitBtn.textContent = 'Enviar consulta';
+            submitBtn.disabled = false;
+            msgEl.textContent = '¡Mensaje enviado! Nos contactaremos contigo en breve.';
+            msgEl.classList.remove('hidden');
+            setTimeout(() => msgEl.classList.add('hidden'), 6000);
+          } else {
+            throw new Error('Error en Formspree');
+          }
+
+        } catch (error) {
+          console.error('Error:', error);
           submitBtn.textContent = 'Enviar consulta';
           submitBtn.disabled = false;
-          msgEl.textContent = '¡Mensaje enviado! Nos contactaremos contigo en breve.';
+          msgEl.textContent = 'Error al enviar. Intenta nuevamente.';
           msgEl.classList.remove('hidden');
-          setTimeout(() => msgEl.classList.add('hidden'), 6000);
-        }, 1200);
+        }
       };
 
       /* ──────────────────────────────────────────
