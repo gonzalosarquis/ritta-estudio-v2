@@ -1938,7 +1938,7 @@
       <hr class="rule mb-7">
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <p class="t-label opacity-30">© 2024 Ritta Estudio. Todos los derechos reservados.</p>
+        <p class="t-label opacity-30">© <span id="year"></span> Ritta Estudio. Todos los derechos reservados.</p>
         <div class="flex gap-6">
           <a href="#" class="t-label opacity-30 hover:opacity-60 transition-opacity no-underline">Privacidad</a>
           <a href="#" class="t-label opacity-30 hover:opacity-60 transition-opacity no-underline">Términos</a>
@@ -2593,6 +2593,9 @@
       document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && contactModal.classList.contains('open')) closeContactModal();
       });
+
+      // Set current year in footer
+      document.getElementById('year').textContent = new Date().getFullYear();
 
     }); /* end DOMContentLoaded */
   </script>
