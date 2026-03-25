@@ -60,15 +60,18 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    const formspreeData = new FormData();
-    formspreeData.append('name', contactData.name);
-    formspreeData.append('email', contactData.email);
-    formspreeData.append('phone', contactData.phone || '');
-    formspreeData.append('message', contactData.message);
-
     const formspreeResponse = await fetch(formspreeUrl, {
       method: 'POST',
-      body: formspreeData
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        name: contactData.name,
+        email: contactData.email,
+        phone: contactData.phone || '',
+        message: contactData.message
+      })
     });
 
     if (!formspreeResponse.ok) {
