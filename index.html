@@ -918,9 +918,11 @@
       inset: 0;
       z-index: 95;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 18px;
+      padding-top: clamp(18px, 5vh, 80px);
+      overflow-y: auto;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s ease;
@@ -941,8 +943,6 @@
     .contact-modal__panel {
       position: relative;
       width: min(700px, 96vw);
-      max-height: calc(100vh - 36px);
-      overflow: auto;
       background: #f1efeb;
       border: 1px solid #d7d2cb;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
