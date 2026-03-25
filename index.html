@@ -2394,7 +2394,7 @@
           return;
         }
 
-        submitBtn.textContent = 'Enviando...';
+        submitBtn.querySelector('span span').textContent = 'Enviando...';
         submitBtn.disabled = true;
         msgEl.classList.add('hidden');
 
@@ -2415,18 +2415,21 @@
 
           if (response.ok) {
             form.reset();
-            submitBtn.textContent = 'Enviar consulta';
+            submitBtn.querySelector('span span').textContent = '✓ Mensaje enviado';
             submitBtn.disabled = false;
             msgEl.textContent = '¡Mensaje enviado! Nos contactaremos contigo en breve.';
             msgEl.classList.remove('hidden');
-            setTimeout(() => msgEl.classList.add('hidden'), 6000);
+            setTimeout(() => {
+              msgEl.classList.add('hidden');
+              submitBtn.querySelector('span span').textContent = 'Enviar consulta';
+            }, 6000);
           } else {
             throw new Error('Error al enviar');
           }
 
         } catch (error) {
           console.error('Error:', error);
-          submitBtn.textContent = 'Enviar consulta';
+          submitBtn.querySelector('span span').textContent = 'Enviar consulta';
           submitBtn.disabled = false;
           msgEl.textContent = 'Error al enviar. Intenta nuevamente.';
           msgEl.classList.remove('hidden');
