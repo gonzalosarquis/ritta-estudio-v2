@@ -2397,42 +2397,21 @@
         msgEl.classList.add('hidden');
 
         try {
-          // 1. Guardar en Supabase
-          const supabaseUrl = 'https://mefqkijoijoxqjledkib.supabase.co';
-          const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZnFraWpvaWpveHFqbGVka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODk2OTUsImV4cCI6MjA4OTk2NTY5NX0.HR4sPGhk0zH5uhulwhBWCzpCDkjmMFDte218Zsh_rDY';
-
-          const contactData = {
-            name: form.querySelector('#f-name').value,
-            email: form.querySelector('#f-email').value,
-            phone: form.querySelector('#f-phone').value || null,
-            service: form.querySelector('#f-service').value || null,
-            message: form.querySelector('#f-msg').value,
-            status: 'nuevo',
-            created_at: new Date().toISOString()
-          };
-
-          // Guardar en Supabase
-          const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/contacts`, {
+          // Send to serverless API
+          const response = await fetch('/api/contact', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`
+              'Content-Type': 'application/json'
             },
-            body: JSON.stringify(contactData)
+            body: JSON.stringify({
+              name: form.querySelector('#f-name').value,
+              email: form.querySelector('#f-email').value,
+              phone: form.querySelector('#f-phone').value || null,
+              message: form.querySelector('#f-msg').value
+            })
           });
 
-          // 2. Enviar a Formspree para email
-          const formspreeData = new FormData(form);
-          const formspreeResponse = await fetch('https://formspree.io/f/xzdkpjdo', {
-            method: 'POST',
-            body: formspreeData,
-            headers: {
-              'Accept': 'application/json'
-            }
-          });
-
-          if (formspreeResponse.ok) {
+          if (response.ok) {
             form.reset();
             submitBtn.textContent = 'Enviar consulta';
             submitBtn.disabled = false;
@@ -2440,7 +2419,7 @@
             msgEl.classList.remove('hidden');
             setTimeout(() => msgEl.classList.add('hidden'), 6000);
           } else {
-            throw new Error('Error en Formspree');
+            throw new Error('Error al enviar');
           }
 
         } catch (error) {
