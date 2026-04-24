@@ -1693,7 +1693,7 @@
       <!-- Reference Grid Layout -->
       <div class="w-full relative reveal reveal-d2"
         style="border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-        <div class="grid grid-cols-1 lg:grid-cols-2">
+        <div id="projects-grid" class="grid grid-cols-1 lg:grid-cols-2">
 
           <!-- Card 1 -->
           <a href="#"
@@ -2657,7 +2657,118 @@
     }); /* end DOMContentLoaded */
   </script>
 
+  <!-- Load Projects Dynamically from Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Initialize Supabase
+    const SUPABASE_URL = 'https://mefqkijoijoxqjledkib.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZnFraWpvaWpveHFqbGVka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODk2OTUsImV4cCI6MjA4OTk2NTY5NX0.HR4sPGhk0zH5uhulwhBWCzpCDkjmMFDte218Zsh_rDY';
 
+    const { createClient } = window.supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadProjectsFromSupabase() {
+      try {
+        // Fetch published projects
+        const { data: proyectos, error: proyectosError } = await db
+          .from('proyectos')
+          .select('*')
+          .eq('publicado', true)
+          .order('orden', { ascending: true, nullsFirst: false });
+
+        if (proyectosError) throw proyectosError;
+        if (!proyectos || proyectos.length === 0) return;
+
+        // Get images for each project
+        const projectsWithImages = await Promise.all(
+          proyectos.slice(0, 4).map(async (proyecto) => {
+            const { data: imagenes } = await db
+              .from('proyecto_imagenes')
+              .select('url')
+              .eq('proyecto_id', proyecto.id)
+              .order('orden', { ascending: true });
+
+            return {
+              ...proyecto,
+              imagenes: imagenes || []
+            };
+          })
+        );
+
+        // Generate HTML for project cards
+        const projectGrid = document.getElementById('projects-grid');
+        if (!projectGrid) return;
+
+        projectGrid.innerHTML = projectsWithImages.map((proyecto, index) => {
+          const images = proyecto.imagenes.map(img => img.url).join(',');
+          const mainImage = proyecto.imagenes[0]?.url || 'images/placeholder.jpg';
+          const borderClasses = getBorderClasses(index);
+
+          return `
+            <a href="#"
+              class="project-card group block py-8 lg:py-12 ${borderClasses} border-solid object-cover"
+              style="border-color: var(--border);"
+              aria-label="Proyecto: ${proyecto.titulo} — ${proyecto.ubicacion}"
+              data-project-title="${proyecto.titulo}"
+              data-project-description="${proyecto.descripcion}"
+              data-project-category="${proyecto.categoria}"
+              data-project-location="${proyecto.ubicacion}"
+              data-project-client="${proyecto.cliente}"
+              data-project-area="${proyecto.area || ''}"
+              data-project-year="${proyecto.año}"
+              data-project-style="${proyecto.estilo}"
+              data-project-images="${images}">
+              <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
+                <img src="${mainImage}" alt="${proyecto.titulo} - Ritta Estudio"
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+              </div>
+              <div class="flex items-center justify-between">
+                <h3 class="text-[13px] font-medium tracking-wide uppercase">${proyecto.titulo}</h3>
+                <div class="btn btn-solid shrink-0">
+                  <span class="btn-inner">
+                    <span>VER</span>
+                    <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
+                  </span>
+                </div>
+              </div>
+            </a>
+          `;
+        }).join('');
+
+        // Re-attach event listeners to new cards
+        document.querySelectorAll('.project-card').forEach(card => {
+          card.addEventListener('click', (e) => {
+            e.preventDefault();
+            openProjectModal(card);
+          });
+          card.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openProjectModal(card);
+            }
+          });
+        });
+
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      }
+    }
+
+    function getBorderClasses(index) {
+      if (index === 0) return 'border-b lg:border-r lg:pr-12';
+      if (index === 1) return 'border-b lg:pl-12';
+      if (index === 2) return 'border-b lg:border-b-0 lg:border-r lg:pr-12';
+      if (index === 3) return 'border-b-0 lg:pl-12';
+      return '';
+    }
+
+    // Load projects when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadProjectsFromSupabase);
+    } else {
+      loadProjectsFromSupabase();
+    }
+  </script>
 
 </body>
 
