@@ -1479,8 +1479,11 @@
      JAVASCRIPT
      Load order:
        1. GSAP + ScrollTrigger (deferred in <head>)
-       2. This inline script (waits for DOMContentLoaded)
+       2. Supabase SDK (loaded before main script)
+       3. This inline script (waits for DOMContentLoaded)
 ════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -2078,12 +2081,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set current year in footer
   document.getElementById('year').textContent = new Date().getFullYear();
 
-}); /* end DOMContentLoaded */
-</script>
-
-<!-- Load Projects Dynamically from Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
+  /* ──────────────────────────────────────────
+     LOAD PROJECTS DYNAMICALLY FROM SUPABASE
+     ────────────────────────────────────────── */
   const SUPABASE_URL = 'https://mefqkijoijoxqjledkib.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZnFraWpvaWpveHFqbGVka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODk2OTUsImV4cCI6MjA4OTk2NTY5NX0.HR4sPGhk0zH5uhulwhBWCzpCDkjmMFDte218Zsh_rDY';
   const { createClient } = window.supabase;
@@ -2173,18 +2173,17 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
       });
-      console.log('✅ Listeners attached');
+      console.log('✅ Listeners attached, modales listos para usar');
 
     } catch (error) {
-      console.error('Error loading projects:', error);
+      console.error('❌ Error loading projects:', error);
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadAllProjects);
-  } else {
-    loadAllProjects();
-  }
+  // Load projects when DOM is ready (which it is, since we're inside DOMContentLoaded)
+  loadAllProjects();
+
+}); /* end DOMContentLoaded */
 </script>
 
 </body></html>
