@@ -2019,7 +2019,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lastFocusedProjectCard) lastFocusedProjectCard.focus();
   }
 
+  // Event listeners for static project cards (if any exist on page load)
+  // Dynamic cards will have listeners attached after loading from Supabase
   document.querySelectorAll('.project-card').forEach(card => {
+    attachProjectCardListeners(card);
+  });
+
+  function attachProjectCardListeners(card) {
     card.addEventListener('click', (e) => {
       e.preventDefault();
       openProjectModal(card);
@@ -2030,7 +2036,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openProjectModal(card);
       }
     });
-  });
+  }
 
   modalCloseTargets.forEach(el => {
     el.addEventListener('click', closeProjectModal);
@@ -2096,7 +2102,11 @@ document.addEventListener('DOMContentLoaded', () => {
         .order('orden', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      if (!proyectos || proyectos.length === 0) return;
+      console.log('✅ Proyectos cargados:', proyectos?.length || 0);
+      if (!proyectos || proyectos.length === 0) {
+        console.log('⚠️ No hay proyectos publicados');
+        return;
+      }
 
       const projectsWithImages = await Promise.all(
         proyectos.map(async (proyecto) => {
@@ -2110,7 +2120,11 @@ document.addEventListener('DOMContentLoaded', () => {
       );
 
       const projectGrid = document.getElementById('projects-grid');
-      if (!projectGrid) return;
+      if (!projectGrid) {
+        console.error('❌ Grid no encontrado: #projects-grid');
+        return;
+      }
+      console.log('✅ Grid encontrado, renderizando', projectsWithImages.length, 'proyectos');
 
       const borderClasses = ['border-b lg:border-r lg:pr-12', 'border-b lg:pl-12', 'border-b lg:border-b-0 lg:border-r lg:pr-12', 'border-b-0 lg:pl-12'];
 
@@ -2148,18 +2162,13 @@ document.addEventListener('DOMContentLoaded', () => {
           </a>`;
       }).join('');
 
-      document.querySelectorAll('.project-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          e.preventDefault();
-          openProjectModal(card);
-        });
-        card.addEventListener('keydown', e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openProjectModal(card);
-          }
-        });
+      // Attach listeners to dynamically generated cards
+      const cards = document.querySelectorAll('.project-card');
+      console.log('✅ Attachando listeners a', cards.length, 'tarjetas');
+      cards.forEach(card => {
+        attachProjectCardListeners(card);
       });
+      console.log('✅ Listeners attached');
 
     } catch (error) {
       console.error('Error loading projects:', error);
