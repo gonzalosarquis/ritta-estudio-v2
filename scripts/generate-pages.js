@@ -119,14 +119,20 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
 
   const prevHtml = prev ? `
         <a href="/proyecto/${prev.slug || generateSlug(prev.titulo)}/" class="project-nav__link">
-          <span class="t-label opacity-40">← Anterior</span>
-          <span class="project-nav__title">${escapeHtml(prev.titulo)}</span>
+          ${prev._thumb ? `<div class="project-nav__thumb"><img src="${escapeHtml(prev._thumb)}" alt="${escapeHtml(prev.titulo)}" loading="lazy"></div>` : ''}
+          <div class="project-nav__text">
+            <span class="t-label opacity-40">← Anterior</span>
+            <span class="project-nav__title">${escapeHtml(prev.titulo)}</span>
+          </div>
         </a>` : '<div></div>';
 
   const nextHtml = next ? `
         <a href="/proyecto/${next.slug || generateSlug(next.titulo)}/" class="project-nav__link project-nav__link--right">
-          <span class="t-label opacity-40">Siguiente →</span>
-          <span class="project-nav__title">${escapeHtml(next.titulo)}</span>
+          ${next._thumb ? `<div class="project-nav__thumb"><img src="${escapeHtml(next._thumb)}" alt="${escapeHtml(next.titulo)}" loading="lazy"></div>` : ''}
+          <div class="project-nav__text">
+            <span class="t-label opacity-40">Siguiente →</span>
+            <span class="project-nav__title">${escapeHtml(next.titulo)}</span>
+          </div>
         </a>` : '<div></div>';
 
   // Meta tags replacements (injected right after <head>)
@@ -236,9 +242,10 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     }
     .project-nav__link {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 32px;
+      flex-direction: row;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 32px;
       background: var(--bg);
       text-decoration: none;
       color: var(--ink);
@@ -246,14 +253,42 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     }
     .project-nav__link:hover { background: rgba(10,10,10,0.04); }
     .project-nav__link--right {
+      flex-direction: row-reverse;
       text-align: right;
+    }
+    .project-nav__thumb {
+      flex-shrink: 0;
+      width: 80px;
+      height: 60px;
+      overflow: hidden;
+      border-radius: 2px;
+      background: var(--border);
+    }
+    .project-nav__thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s var(--ease-out);
+    }
+    .project-nav__link:hover .project-nav__thumb img { transform: scale(1.06); }
+    .project-nav__text {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .project-nav__link--right .project-nav__text {
       align-items: flex-end;
     }
     .project-nav__title {
-      font-size: clamp(18px, 2.5vw, 28px);
+      font-size: clamp(15px, 2vw, 22px);
       font-weight: 500;
       letter-spacing: -0.02em;
       text-transform: uppercase;
+    }
+    @media (max-width: 600px) {
+      .project-nav { grid-template-columns: 1fr; }
+      .project-nav__thumb { width: 60px; height: 46px; }
     }
 
     /* ── Breadcrumb ── */
@@ -421,7 +456,24 @@ async function generatePages() {
 
   console.log(`📦 ${proyectos.length} proyectos encontrados`);
 
-  for (const proyecto of proyectos) {
+  // Pre-fetch first image of every project for nav thumbnails
+  const { data: allNavImages } = await supabase
+    .from('proyecto_imagenes')
+    .select('proyecto_id, url')
+    .order('orden', { ascending: true });
+
+  const firstImageMap = {};
+  for (const img of allNavImages || []) {
+    if (!firstImageMap[img.proyecto_id]) firstImageMap[img.proyecto_id] = img.url;
+  }
+
+  // Attach _thumb to each project (used in prev/next nav)
+  const proyectosWithThumbs = proyectos.map(p => ({
+    ...p,
+    _thumb: firstImageMap[p.id] || p.imagen_hero || null
+  }));
+
+  for (const proyecto of proyectosWithThumbs) {
     const slug = proyecto.slug || generateSlug(proyecto.titulo);
 
     const [{ data: imagenes }, { data: videos }] = await Promise.all([
@@ -429,7 +481,7 @@ async function generatePages() {
       supabase.from('proyecto_videos').select('*').eq('proyecto_id', proyecto.id).order('orden'),
     ]);
 
-    const html = assemblePage(proyecto, imagenes || [], videos || [], proyectos);
+    const html = assemblePage(proyecto, imagenes || [], videos || [], proyectosWithThumbs);
 
     ensureDir(path.join(__dirname, '../proyecto', slug));
     fs.writeFileSync(path.join(__dirname, '../proyecto', slug, 'index.html'), html, 'utf-8');
