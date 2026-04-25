@@ -54,446 +54,283 @@ function ensureDir(dir) {
   }
 }
 
-// Read external files to embed in HTML
-function readTemplate(filename) {
-  const templatePath = path.join(__dirname, '..', filename);
-  if (fs.existsSync(templatePath)) {
-    return fs.readFileSync(templatePath, 'utf-8');
+// Extract CSS from proyectos.html
+function extractCSSFromProyectos() {
+  const proyectosPath = path.join(__dirname, '../proyectos.html');
+  if (!fs.existsSync(proyectosPath)) {
+    console.warn('⚠️  proyectos.html no encontrado, usando CSS básico');
+    return '';
   }
-  return '';
+
+  const content = fs.readFileSync(proyectosPath, 'utf-8');
+  const styleMatch = content.match(/<style>([\s\S]*?)<\/style>/);
+  return styleMatch ? styleMatch[1] : '';
 }
 
-// Extract CSS from an HTML file
-function extractCSS(htmlFile) {
-  const content = readTemplate(htmlFile);
-  const styleMatch = content.match(/<style[^>]*>[\s\S]*?<\/style>/);
-  if (styleMatch) {
-    return styleMatch[0];
-  }
-  return '';
+// Extract head section from proyectos.html
+function extractHeadFromProyectos() {
+  const proyectosPath = path.join(__dirname, '../proyectos.html');
+  if (!fs.existsSync(proyectosPath)) return '';
+
+  const content = fs.readFileSync(proyectosPath, 'utf-8');
+
+  // Extract everything from <head> to </head>
+  const headMatch = content.match(/<head>([\s\S]*?)<\/head>/);
+  if (!headMatch) return '';
+
+  const headContent = headMatch[1];
+
+  // Extract only fonts and scripts, excluding style tag
+  const fontMatch = headContent.match(/<link[^>]*fonts\.googleapis[^>]*>/);
+  const tailwindMatch = headContent.match(/<script[^>]*tailwindcss[^>]*><\/script>/);
+  const gsapMatch = headContent.match(/<script[^>]*gsap\.min\.js[^>]*><\/script>/);
+  const scrollTriggerMatch = headContent.match(/<script[^>]*ScrollTrigger\.min\.js[^>]*><\/script>/);
+
+  let headExtras = '';
+  if (fontMatch) headExtras += fontMatch[0] + '\n  ';
+  if (tailwindMatch) headExtras += tailwindMatch[0] + '\n  ';
+  if (gsapMatch) headExtras += gsapMatch[0] + '\n  ';
+  if (scrollTriggerMatch) headExtras += scrollTriggerMatch[0] + '\n  ';
+
+  return headExtras;
 }
 
-// Extract scripts from an HTML file
-function extractScripts(htmlFile) {
-  const content = readTemplate(htmlFile);
-  const scriptMatches = content.match(/<script[^>]*>[\s\S]*?<\/script>/g) || [];
-  return scriptMatches.join('\n');
+// Extract header HTML from proyectos.html
+function extractHeaderFromProyectos() {
+  const proyectosPath = path.join(__dirname, '../proyectos.html');
+  if (!fs.existsSync(proyectosPath)) return '';
+
+  const content = fs.readFileSync(proyectosPath, 'utf-8');
+
+  // Extract header section
+  const headerMatch = content.match(/<header id="site-header"[\s\S]*?<\/header>/);
+  return headerMatch ? headerMatch[0] : '';
 }
 
-// Generate HTML for a single project
-function generateProjectHTML(proyecto, imagenes, videos, allProyectos) {
-  const slug = proyecto.slug || generateSlug(proyecto.titulo);
-  const mainImage = imagenes.length > 0 ? imagenes[0].url : 'https://via.placeholder.com/1200x800';
+// Extract cursor HTML from proyectos.html
+function extractCursorFromProyectos() {
+  const proyectosPath = path.join(__dirname, '../proyectos.html');
+  if (!fs.existsSync(proyectosPath)) return '';
 
-  // Find prev/next projects
-  const proyectoIndex = allProyectos.findIndex(p => p.id === proyecto.id);
-  const prevProyecto = proyectoIndex > 0 ? allProyectos[proyectoIndex - 1] : null;
-  const nextProyecto = proyectoIndex < allProyectos.length - 1 ? allProyectos[proyectoIndex + 1] : null;
+  const content = fs.readFileSync(proyectosPath, 'utf-8');
 
+  // Extract cursor divs and mobile menu
+  const cursorMatch = content.match(/<div id="cursor"[\s\S]*?<\/div>\s*<div id="cursor-dot"[\s\S]*?<\/div>/);
+  const mobileMenuMatch = content.match(/<div id="mobile-menu"[\s\S]*?<\/div>/);
+
+  let result = '';
+  if (cursorMatch) result += cursorMatch[0] + '\n\n';
+  if (mobileMenuMatch) result += mobileMenuMatch[0] + '\n\n';
+
+  return result;
+}
+
+// Generate project page HTML
+function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
+  const css = extractCSSFromProyectos();
+  const headExtras = extractHeadFromProyectos();
+  const header = extractHeaderFromProyectos();
+  const cursorHtml = extractCursorFromProyectos();
+
+  // Build image gallery HTML
   const imagensList = imagenes
     .map((img, idx) => {
-      return `<div class="w-full aspect-[1.45] bg-stone-100 rounded-lg overflow-hidden group">
-        <img src="${escapeHtml(img.url)}" alt="${escapeHtml(proyecto.titulo)}"
-          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-pointer"
-          loading="lazy">
-      </div>`;
+      return `<img src="${escapeHtml(img.url)}" alt="Proyecto ${escapeHtml(proyecto.titulo)} - imagen ${idx + 1}" loading="lazy" class="w-full h-auto object-cover rounded">`;
     })
-    .join('\n');
+    .join('\n        ');
 
+  // Build videos HTML
   const videosList = videos
     .map((video) => {
       const videoId = getYouTubeId(video.url_youtube);
-      return videoId
-        ? `<iframe
-          src="https://www.youtube.com/embed/${videoId}"
-          width="100%"
-          height="600"
-          class="rounded-lg"
-          allowfullscreen=""
-          loading="lazy"
-          title="${escapeHtml(video.titulo || 'Video')}">
-        </iframe>`
-        : '';
+      if (!videoId) return '';
+      return `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
     })
-    .join('\n');
+    .filter(v => v)
+    .join('\n        ');
 
-  const nextProjectLink = nextProyecto
-    ? `<a href="/proyecto/${nextProyecto.slug || generateSlug(nextProyecto.titulo)}/" class="group">
-      <div class="aspect-[1.45] bg-stone-100 rounded-lg overflow-hidden mb-3">
-        <img src="${escapeHtml(nextProyecto.imagen_hero || imagenes[0]?.url || 'https://via.placeholder.com/400x300')}"
-          alt="${escapeHtml(nextProyecto.titulo)}"
-          class="w-full h-full object-cover transition-transform group-hover:scale-105">
-      </div>
-      <p class="text-sm font-medium text-stone-900">${escapeHtml(nextProyecto.titulo)}</p>
-    </a>`
-    : '';
+  // Find previous and next projects
+  const currentIndex = todosLosProyectos.findIndex(p => p.id === proyecto.id);
+  const prevProyecto = currentIndex > 0 ? todosLosProyectos[currentIndex - 1] : null;
+  const nextProyecto = currentIndex < todosLosProyectos.length - 1 ? todosLosProyectos[currentIndex + 1] : null;
 
-  const prevProjectLink = prevProyecto
-    ? `<a href="/proyecto/${prevProyecto.slug || generateSlug(prevProyecto.titulo)}/" class="group">
-      <div class="aspect-[1.45] bg-stone-100 rounded-lg overflow-hidden mb-3">
-        <img src="${escapeHtml(prevProyecto.imagen_hero || imagenes[0]?.url || 'https://via.placeholder.com/400x300')}"
-          alt="${escapeHtml(prevProyecto.titulo)}"
-          class="w-full h-full object-cover transition-transform group-hover:scale-105">
-      </div>
-      <p class="text-sm font-medium text-stone-900">${escapeHtml(prevProyecto.titulo)}</p>
-    </a>`
-    : '';
+  let prevProjectLink = '';
+  let nextProjectLink = '';
 
-  // Get Tailwind and other stylesheets from main HTML
-  const tailwindLink = '<script src="https://cdn.tailwindcss.com"></script>';
-  const gsapScript = '<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>';
+  if (prevProyecto) {
+    const prevSlug = prevProyecto.slug || generateSlug(prevProyecto.titulo);
+    const prevImage = `https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg`; // Placeholder
+    prevProjectLink = `
+      <a href="/proyecto/${prevSlug}/" class="flex flex-col gap-3 p-4 border border-[var(--border)] rounded hover:bg-[var(--muted)] hover:bg-opacity-10 transition">
+        <h3 class="t-section">${escapeHtml(prevProyecto.titulo)}</h3>
+        <p class="t-paragraph">${escapeHtml(prevProyecto.descripcion || '')}</p>
+      </a>`;
+  }
+
+  if (nextProyecto) {
+    const nextSlug = nextProyecto.slug || generateSlug(nextProyecto.titulo);
+    const nextImage = `https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg`; // Placeholder
+    nextProjectLink = `
+      <a href="/proyecto/${nextSlug}/" class="flex flex-col gap-3 p-4 border border-[var(--border)] rounded hover:bg-[var(--muted)] hover:bg-opacity-10 transition">
+        <h3 class="t-section">${escapeHtml(nextProyecto.titulo)}</h3>
+        <p class="t-paragraph">${escapeHtml(nextProyecto.descripcion || '')}</p>
+      </a>`;
+  }
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
+  <meta name="keywords" content="diseño de interiores, ${escapeHtml(proyecto.categoria || '')}, ${escapeHtml(proyecto.ubicacion || '')}">
   <title>${escapeHtml(proyecto.titulo)} — Ritta Estudio</title>
-  <meta name="description" content="${escapeHtml(proyecto.descripcion)}">
-  <meta name="theme-color" content="#F4F0EC">
+  <meta name="author" content="Ritta Estudio">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
 
   <!-- Open Graph / Social Media -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${slug}/">
+  <meta property="og:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
   <meta property="og:title" content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
-  <meta property="og:description" content="${escapeHtml(proyecto.descripcion)}">
-  <meta property="og:image" content="${escapeHtml(mainImage)}">
+  <meta property="og:description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
+  <meta property="og:image" content="${escapeHtml(imagenes.length > 0 ? imagenes[0].url : 'https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg')}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
 
   <!-- Twitter Card -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${slug}/">
+  <meta property="twitter:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
   <meta property="twitter:title" content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
-  <meta property="twitter:description" content="${escapeHtml(proyecto.descripcion)}">
-  <meta property="twitter:image" content="${escapeHtml(mainImage)}">
-
-  <!-- Canonical -->
-  <link rel="canonical" href="https://ritta-estudio-v2.vercel.app/proyecto/${slug}/">
+  <meta property="twitter:description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
+  <meta property="twitter:image" content="${escapeHtml(imagenes.length > 0 ? imagenes[0].url : 'https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg')}">
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
-  <!-- Tailwind & Other Styles -->
-  ${tailwindLink}
-
-  <style>
-    :root {
-      --bg: #F4F0EC;
-      --ink: #0A0A0A;
-      --white: #FFFFFF;
-      --muted: rgba(10, 10, 10, 0.45);
-      --border: rgba(10, 10, 10, 0.12);
-      --radius-pill: 30px;
-      --nav-h: 56px;
-      --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--ink);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.5;
-    }
-
-    .t-hero {
-      font-size: clamp(46px, 9.5vw, 119px);
-      font-weight: 800;
-      letter-spacing: -0.045em;
-      line-height: 1;
-    }
-
-    .t-section {
-      font-size: clamp(30px, 4.5vw, 64px);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-    }
-
-    .t-label {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .t-body {
-      font-size: 13px;
-      line-height: 1.75;
-    }
-
-    a {
-      color: var(--ink);
-      text-decoration: none;
-    }
-
-    /* Navigation */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: var(--nav-h);
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 clamp(16px, 5vw, 48px);
-      z-index: 100;
-    }
-
-    nav a {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 500;
-      font-size: 13px;
-    }
-
-    nav a img {
-      height: 24px;
-      width: auto;
-    }
-
-    /* Breadcrumb */
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 32px;
-    }
-
-    .breadcrumb a {
-      color: var(--ink);
-      transition: color 0.2s;
-    }
-
-    .breadcrumb a:hover {
-      color: var(--muted);
-    }
-
-    /* Gallery */
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-      margin: 64px 0;
-    }
-
-    @media (max-width: 768px) {
-      .gallery {
-        grid-template-columns: 1fr;
+  <!-- Fonts & Libraries from proyectos.html -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#F4F0EC',
+            ink:   '#0A0A0A',
+            muted: '#6B6560',
+          },
+          fontFamily: { sans: ['Manrope', 'Arial', 'sans-serif'] },
+          maxWidth:   { site: '1200px' },
+        }
       }
     }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer=""></script>
 
-    /* Meta Grid */
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 32px;
-      padding: 48px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .meta-item .t-label {
-      margin-bottom: 8px;
-      color: var(--muted);
-    }
-
-    .meta-item p {
-      font-size: 15px;
-      font-weight: 500;
-    }
-
-    /* Navigation Projects */
-    .nav-projects {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 48px;
-      margin: 64px 0;
-      padding: 48px 0;
-      border-top: 1px solid var(--border);
-    }
-
-    .nav-projects a {
-      transition: opacity 0.3s;
-    }
-
-    .nav-projects a:hover {
-      opacity: 0.7;
-    }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      transition: all 0.3s;
-      border: 1px solid var(--border);
-      background: var(--white);
-      color: var(--ink);
-    }
-
-    .btn:hover {
-      background: var(--ink);
-      color: var(--white);
-      border-color: var(--ink);
-    }
-
-    .btn-primary {
-      background: var(--ink);
-      color: var(--white);
-      border-color: var(--ink);
-    }
-
-    .btn-primary:hover {
-      background: var(--white);
-      color: var(--ink);
-    }
-
-    /* Container */
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 clamp(16px, 5vw, 48px);
-    }
-
-    /* Hero Section */
-    .hero {
-      padding-top: calc(var(--nav-h) + 64px);
-      padding-bottom: 64px;
-    }
-
-    .hero h1 {
-      margin-bottom: 24px;
-    }
-
-    .hero-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 32px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    /* Description */
-    .description {
-      max-width: 800px;
-      margin: 64px 0;
-      font-size: 15px;
-      line-height: 1.8;
-    }
-
-    .description p {
-      margin-bottom: 16px;
-    }
+  <style>
+${css}
   </style>
 </head>
+
 <body>
-  <!-- Navigation -->
-  <nav>
-    <a href="/" class="flex items-center gap-2">
-      <img src="/logo.png" alt="Ritta Estudio" loading="eager">
+
+<!-- Custom cursor and mobile menu -->
+${cursorHtml}
+
+<!-- Header -->
+${header}
+
+<main style="padding-top: var(--nav-h); max-width: 1200px; margin: 0 auto;">
+
+  <!-- Breadcrumb -->
+  <div style="display: flex; gap: 8px; font-size: 13px; color: var(--muted); margin: 32px clamp(16px,5vw,48px); flex-wrap: wrap;">
+    <a href="/" style="color: var(--ink);">Inicio</a>
+    <span>/</span>
+    <a href="/proyectos.html" style="color: var(--ink);">Proyectos</a>
+    <span>/</span>
+    <span>${escapeHtml(proyecto.titulo)}</span>
+  </div>
+
+  <!-- Hero Section -->
+  <section style="padding: 0 clamp(16px,5vw,48px) 64px;">
+    <h1 class="t-hero" style="margin-bottom: 24px;">${escapeHtml(proyecto.titulo)}</h1>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; font-size: 13px; margin-bottom: 32px;">
+      ${proyecto.cliente ? `<div><span style="color: var(--muted);">Cliente</span><br><strong>${escapeHtml(proyecto.cliente)}</strong></div>` : ''}
+      ${proyecto.ubicacion ? `<div><span style="color: var(--muted);">Ubicación</span><br><strong>${escapeHtml(proyecto.ubicacion)}</strong></div>` : ''}
+      ${proyecto.area ? `<div><span style="color: var(--muted);">Área</span><br><strong>${proyecto.area} m²</strong></div>` : ''}
+      ${proyecto.año ? `<div><span style="color: var(--muted);">Año</span><br><strong>${proyecto.año}</strong></div>` : ''}
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  ${imagenes.length > 0 ? `
+  <section style="padding: 0 clamp(16px,5vw,48px) 64px;">
+    <h2 class="t-section" style="margin-bottom: 32px;">Galería</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+      ${imagensList}
+    </div>
+  </section>
+  ` : ''}
+
+  <!-- Metadata -->
+  <section style="padding: 0 clamp(16px,5vw,48px) 64px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 32px;">
+    ${proyecto.categoria ? `<div><span class="t-label" style="color: var(--muted);">Categoría</span><p>${escapeHtml(proyecto.categoria)}</p></div>` : ''}
+    ${proyecto.estilo ? `<div><span class="t-label" style="color: var(--muted);">Estilo</span><p>${escapeHtml(proyecto.estilo)}</p></div>` : ''}
+    ${proyecto.area ? `<div><span class="t-label" style="color: var(--muted);">Área</span><p>${proyecto.area} m²</p></div>` : ''}
+    ${proyecto.año ? `<div><span class="t-label" style="color: var(--muted);">Año</span><p>${proyecto.año}</p></div>` : ''}
+  </section>
+
+  <!-- Description -->
+  ${proyecto.descripcion_larga ? `
+  <section style="padding: 0 clamp(16px,5vw,48px) 64px; max-width: 600px;">
+    <h2 class="t-section" style="margin-bottom: 24px;">Descripción</h2>
+    <div style="line-height: 1.8; color: var(--muted);">
+      ${proyecto.descripcion_larga.split('\\n').map(p => `<p style="margin-bottom: 16px;">${escapeHtml(p)}</p>`).join('')}
+    </div>
+  </section>
+  ` : ''}
+
+  <!-- Videos -->
+  ${videos.length > 0 ? `
+  <section style="padding: 0 clamp(16px,5vw,48px) 64px;">
+    <h2 class="t-section" style="margin-bottom: 32px;">Videos</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+      ${videosList}
+    </div>
+  </section>
+  ` : ''}
+
+  <!-- Project Navigation -->
+  ${prevProyecto || nextProyecto ? `
+  <section style="padding: 0 clamp(16px,5vw,48px) 64px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin: 64px 0;">
+    ${prevProyecto ? `<div><span class="t-label" style="color: var(--muted);">Proyecto anterior</span>${prevProjectLink}</div>` : ''}
+    ${nextProyecto ? `<div><span class="t-label" style="color: var(--muted);">Siguiente proyecto</span>${nextProjectLink}</div>` : ''}
+  </section>
+  ` : ''}
+
+  <!-- CTA -->
+  <section style="text-align: center; padding: 64px clamp(16px,5vw,48px); border-top: 1px solid var(--border); margin-top: 64px;">
+    <h2 class="t-section" style="margin-bottom: 16px;">¿Inspirado?</h2>
+    <p style="margin-bottom: 24px; color: var(--muted);">Descubrí más proyectos de Ritta Estudio</p>
+    <a href="/proyectos.html" class="btn btn-outline" style="display: inline-flex; padding: 11px 26px;">
+      <span>Ver todos los proyectos</span>
     </a>
-  </nav>
+  </section>
 
-  <!-- Main Content -->
-  <main class="container">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb" style="padding-top: calc(var(--nav-h) + 32px);">
-      <a href="/">Inicio</a>
-      <span>/</span>
-      <a href="/proyectos.html">Proyectos</a>
-      <span>/</span>
-      <span>${escapeHtml(proyecto.titulo)}</span>
-    </div>
+</main>
 
-    <!-- Hero Section -->
-    <section class="hero">
-      <h1 class="t-hero">${escapeHtml(proyecto.titulo)}</h1>
-      <div class="hero-meta">
-        ${proyecto.cliente ? `<div><strong>Cliente:</strong> ${escapeHtml(proyecto.cliente)}</div>` : ''}
-        ${proyecto.ubicacion ? `<div><strong>Ubicación:</strong> ${escapeHtml(proyecto.ubicacion)}</div>` : ''}
-        ${proyecto.area ? `<div><strong>Área:</strong> ${proyecto.area} m²</div>` : ''}
-        ${proyecto.año ? `<div><strong>Año:</strong> ${proyecto.año}</div>` : ''}
-      </div>
-    </section>
+<!-- Footer -->
+<footer style="background: var(--ink); color: var(--white); padding: 48px 0; text-align: center; margin-top: 64px;">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px,5vw,48px);">
+    <p style="margin-bottom: 8px;">© ${new Date().getFullYear()} Ritta Estudio. Todos los derechos reservados.</p>
+    <p style="font-size: 12px; color: rgba(255,255,255,0.6);">Diseño y contenido</p>
+  </div>
+</footer>
 
-    <!-- Gallery -->
-    ${imagenes.length > 0 ? `
-      <section>
-        <h2 class="t-section mb-8">Galería</h2>
-        <div class="gallery">
-          ${imagensList}
-        </div>
-      </section>
-    ` : ''}
-
-    <!-- Metadata -->
-    <section class="meta-grid">
-      ${proyecto.categoria ? `<div class="meta-item"><p class="t-label">Categoría</p><p>${escapeHtml(proyecto.categoria)}</p></div>` : ''}
-      ${proyecto.estilo ? `<div class="meta-item"><p class="t-label">Estilo</p><p>${escapeHtml(proyecto.estilo)}</p></div>` : ''}
-      ${proyecto.area ? `<div class="meta-item"><p class="t-label">Área</p><p>${proyecto.area} m²</p></div>` : ''}
-      ${proyecto.año ? `<div class="meta-item"><p class="t-label">Año</p><p>${proyecto.año}</p></div>` : ''}
-    </section>
-
-    <!-- Description -->
-    ${proyecto.descripcion_larga ? `
-      <section class="description">
-        <h2 class="t-section mb-6">Descripción</h2>
-        ${proyecto.descripcion_larga.split('\n').map(p => `<p>${escapeHtml(p)}</p>`).join('')}
-      </section>
-    ` : ''}
-
-    <!-- Videos -->
-    ${videos.length > 0 ? `
-      <section style="margin: 64px 0;">
-        <h2 class="t-section mb-8">Videos</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
-          ${videosList}
-        </div>
-      </section>
-    ` : ''}
-
-    <!-- Navigation to other projects -->
-    ${nextProyecto || prevProyecto ? `
-      <section class="nav-projects">
-        ${prevProjectLink ? `<div><p class="t-label mb-4 text-stone-500">Proyecto anterior</p>${prevProjectLink}</div>` : ''}
-        ${nextProjectLink ? `<div><p class="t-label mb-4 text-stone-500">Siguiente proyecto</p>${nextProjectLink}</div>` : ''}
-      </section>
-    ` : ''}
-
-    <!-- CTA -->
-    <section style="text-align: center; padding: 64px 0; border-top: 1px solid var(--border);">
-      <h2 class="t-section mb-6">¿Inspirado?</h2>
-      <p style="margin-bottom: 24px; color: var(--muted);">Descubrí más proyectos de Ritta Estudio</p>
-      <a href="/proyectos.html" class="btn btn-primary">Ver todos los proyectos</a>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer style="background: var(--ink); color: var(--white); padding: 48px 0; text-align: center; margin-top: 64px;">
-    <div class="container">
-      <p style="margin-bottom: 8px;">© ${new Date().getFullYear()} Ritta Estudio. Todos los derechos reservados.</p>
-      <p style="font-size: 12px; color: rgba(255,255,255,0.6);">Diseño y contenido</p>
-    </div>
-  </footer>
-
-  <!-- GSAP for animations -->
-  ${gsapScript}
 </body>
 </html>`;
 }
@@ -551,11 +388,12 @@ async function generatePages() {
         proyectos
       );
 
-      // Create directory and write file
-      const projectDir = path.join(__dirname, '..', 'proyecto', slug);
-      ensureDir(projectDir);
-      const filePath = path.join(projectDir, 'index.html');
+      // Create directory
+      const proyectoDir = path.join(__dirname, '../proyecto', slug);
+      ensureDir(proyectoDir);
 
+      // Write file
+      const filePath = path.join(proyectoDir, 'index.html');
       fs.writeFileSync(filePath, html, 'utf-8');
       console.log(`✅ ${slug}/index.html`);
     }
@@ -567,5 +405,4 @@ async function generatePages() {
   }
 }
 
-// Run
 generatePages();
