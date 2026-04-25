@@ -18,7 +18,7 @@ if (!SUPABASE_ANON_KEY) {
 console.log(`📍 Conectando a: ${SUPABASE_URL}`);
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Slug generation (matches admin panel logic)
+// Slug generation
 function generateSlug(titulo) {
   return titulo
     .toLowerCase()
@@ -28,13 +28,13 @@ function generateSlug(titulo) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Extract YouTube video ID from URL
+// Extract YouTube video ID
 function getYouTubeId(url) {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
   return match ? match[1] : null;
 }
 
-// Escape HTML special characters
+// Escape HTML
 function escapeHtml(text) {
   if (!text) return '';
   const map = {
@@ -47,103 +47,59 @@ function escapeHtml(text) {
   return text.replace(/[&<>"']/g, (char) => map[char]);
 }
 
-// Create directory if it doesn't exist
+// Create directory
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 }
 
-// Extract CSS from proyectos.html
-function extractCSSFromProyectos() {
+// Read proyectos.html template
+function getProyectosTemplate() {
   const proyectosPath = path.join(__dirname, '../proyectos.html');
   if (!fs.existsSync(proyectosPath)) {
-    console.warn('⚠️  proyectos.html no encontrado, usando CSS básico');
-    return '';
+    throw new Error('proyectos.html no encontrado');
   }
-
-  const content = fs.readFileSync(proyectosPath, 'utf-8');
-  const styleMatch = content.match(/<style>([\s\S]*?)<\/style>/);
-  return styleMatch ? styleMatch[1] : '';
+  return fs.readFileSync(proyectosPath, 'utf-8');
 }
 
-// Extract head section from proyectos.html
-function extractHeadFromProyectos() {
-  const proyectosPath = path.join(__dirname, '../proyectos.html');
-  if (!fs.existsSync(proyectosPath)) return '';
-
-  const content = fs.readFileSync(proyectosPath, 'utf-8');
-
-  // Extract everything from <head> to </head>
-  const headMatch = content.match(/<head>([\s\S]*?)<\/head>/);
-  if (!headMatch) return '';
-
-  const headContent = headMatch[1];
-
-  // Extract only fonts and scripts, excluding style tag
-  const fontMatch = headContent.match(/<link[^>]*fonts\.googleapis[^>]*>/);
-  const tailwindMatch = headContent.match(/<script[^>]*tailwindcss[^>]*><\/script>/);
-  const gsapMatch = headContent.match(/<script[^>]*gsap\.min\.js[^>]*><\/script>/);
-  const scrollTriggerMatch = headContent.match(/<script[^>]*ScrollTrigger\.min\.js[^>]*><\/script>/);
-
-  let headExtras = '';
-  if (fontMatch) headExtras += fontMatch[0] + '\n  ';
-  if (tailwindMatch) headExtras += tailwindMatch[0] + '\n  ';
-  if (gsapMatch) headExtras += gsapMatch[0] + '\n  ';
-  if (scrollTriggerMatch) headExtras += scrollTriggerMatch[0] + '\n  ';
-
-  return headExtras;
-}
-
-// Generate a simple, functional header
-function generateHeaderForProject() {
-  return `<header id="site-header" role="banner">
-  <div class="max-w-site mx-auto h-full site-pad flex items-center justify-between" style="padding: 0 clamp(16px,5vw,48px); display: flex; align-items: center; justify-content: space-between; height: var(--nav-h);">
-
-    <a href="/" class="flex-shrink-0" aria-label="Ritta Estudio — Inicio">
-      <img src="/images/logo.png" alt="Ritta Estudio Logo" class="h-4 sm:h-5 md:h-[20px] w-auto block" style="height: 20px; width: auto;">
-    </a>
-
-    <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal" style="display: none;">
-      <a href="/" class="nav-link">Inicio</a>
-      <a href="/proyectos.html" class="nav-link active">Proyectos</a>
-      <a href="/" class="nav-link">Servicios</a>
-      <a href="/" class="nav-link">Contacto</a>
-    </nav>
-
-    <div class="flex items-center gap-5">
-      <a href="/proyectos.html" class="btn btn-outline hidden sm:inline-flex" style="display: inline-flex; border: 1px solid var(--ink); border-radius: var(--radius-pill); padding: 11px 26px; background: transparent; color: var(--ink); text-decoration: none; font-size: 11px; font-weight: 500; letter-spacing: 0.11em; text-transform: uppercase;">
-        Proyectos
-      </a>
-      <button id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu" class="md:hidden flex flex-col gap-[5px] p-2 bg-transparent border-none cursor-pointer" style="display: none;">
-        <span class="hb-line" style="display: block; width: 22px; height: 1.5px; background: var(--ink); border-radius: 2px;"></span>
-        <span class="hb-line" style="display: block; width: 22px; height: 1.5px; background: var(--ink); border-radius: 2px;"></span>
-        <span class="hb-line" style="display: block; width: 22px; height: 1.5px; background: var(--ink); border-radius: 2px;"></span>
-      </button>
-    </div>
-
-  </div>
-</header>`;
-}
-
-// Generate simple cursor HTML
-function generateCursorHtml() {
-  return `<!-- Custom cursor (2 layers: ring + dot) -->
-<div id="cursor" aria-hidden="true"></div>
-<div id="cursor-dot" aria-hidden="true"></div>`;
-}
-
-// Generate project page HTML
+// Generate project page HTML using proyectos.html as base
 function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
-  const css = extractCSSFromProyectos();
-  const headExtras = extractHeadFromProyectos();
-  const header = generateHeaderForProject();
-  const cursorHtml = generateCursorHtml();
+  const template = getProyectosTemplate();
 
-  // Build image gallery HTML
+  // Extract head section
+  const headMatch = template.match(/<head>([\s\S]*?)<\/head>/);
+  const headContent = headMatch ? headMatch[1] : '';
+
+  // Extract header
+  const headerMatch = template.match(/<header id="site-header"[\s\S]*?<\/header>/);
+  const headerContent = headerMatch ? headerMatch[0] : '';
+
+  // Extract footer
+  const footerMatch = template.match(/<footer[\s\S]*?<\/footer>/);
+  const footerContent = footerMatch ? footerMatch[0] : '';
+
+  // Extract cursor and mobile menu
+  const cursorMatch = template.match(/<div id="cursor"[\s\S]*?<div id="cursor-dot"[\s\S]*?<\/div>/);
+  const cursorContent = cursorMatch ? cursorMatch[0] : '';
+
+  // Extract mobile menu
+  const mobileMenuMatch = template.match(/<div id="mobile-menu"[\s\S]*?(?=\n<!-- ════|<header)/);
+  const mobileMenuContent = mobileMenuMatch ? mobileMenuMatch[0] : '';
+
+  // Extract scripts from proyectos.html
+  const scriptsMatch = template.match(/<script[\s\S]*?<\/script>/g) || [];
+  let scripts = scriptsMatch.join('\n');
+
+  // Remove the project modal and contact modal related code
+  scripts = scripts.replace(/openProjectModal[\s\S]*?}\s*function/g, 'function');
+
+  // Build image gallery HTML with lightbox
   const imagensList = imagenes
     .map((img, idx) => {
-      return `<img src="${escapeHtml(img.url)}" alt="Proyecto ${escapeHtml(proyecto.titulo)} - imagen ${idx + 1}" loading="lazy" class="w-full h-auto object-cover rounded">`;
+      return `<a href="${escapeHtml(img.url)}" class="glightbox w-full h-auto object-cover" data-gallery="project-gallery">
+        <img src="${escapeHtml(img.url)}" alt="Proyecto ${escapeHtml(proyecto.titulo)} - imagen ${idx + 1}" loading="lazy" class="w-full h-auto object-cover rounded cursor-pointer hover:opacity-80 transition">
+      </a>`;
     })
     .join('\n        ');
 
@@ -152,7 +108,9 @@ function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
     .map((video) => {
       const videoId = getYouTubeId(video.url_youtube);
       if (!videoId) return '';
-      return `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+      return `<div class="relative w-full" style="padding-bottom: 56.25%; height: 0;">
+        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+      </div>`;
     })
     .filter(v => v)
     .join('\n        ');
@@ -162,185 +120,165 @@ function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
   const prevProyecto = currentIndex > 0 ? todosLosProyectos[currentIndex - 1] : null;
   const nextProyecto = currentIndex < todosLosProyectos.length - 1 ? todosLosProyectos[currentIndex + 1] : null;
 
-  let prevProjectLink = '';
-  let nextProjectLink = '';
-
+  let navLinks = '';
   if (prevProyecto) {
     const prevSlug = prevProyecto.slug || generateSlug(prevProyecto.titulo);
-    const prevImage = `https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg`; // Placeholder
-    prevProjectLink = `
-      <a href="/proyecto/${prevSlug}/" class="flex flex-col gap-3 p-4 border border-[var(--border)] rounded hover:bg-[var(--muted)] hover:bg-opacity-10 transition">
-        <h3 class="t-section">${escapeHtml(prevProyecto.titulo)}</h3>
-        <p class="t-paragraph">${escapeHtml(prevProyecto.descripcion || '')}</p>
-      </a>`;
+    navLinks += `<a href="/proyecto/${prevSlug}/" class="group block py-8 lg:py-12 border-b border-solid" style="border-color: var(--border);">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="t-label opacity-40 mb-2">← Anterior</p>
+          <h3 class="t-section">${escapeHtml(prevProyecto.titulo)}</h3>
+        </div>
+      </div>
+    </a>`;
   }
 
   if (nextProyecto) {
     const nextSlug = nextProyecto.slug || generateSlug(nextProyecto.titulo);
-    const nextImage = `https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg`; // Placeholder
-    nextProjectLink = `
-      <a href="/proyecto/${nextSlug}/" class="flex flex-col gap-3 p-4 border border-[var(--border)] rounded hover:bg-[var(--muted)] hover:bg-opacity-10 transition">
-        <h3 class="t-section">${escapeHtml(nextProyecto.titulo)}</h3>
-        <p class="t-paragraph">${escapeHtml(nextProyecto.descripcion || '')}</p>
-      </a>`;
+    navLinks += `<a href="/proyecto/${nextSlug}/" class="group block py-8 lg:py-12 border-b border-solid" style="border-color: var(--border);">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="t-label opacity-40 mb-2">Siguiente →</p>
+          <h3 class="t-section">${escapeHtml(nextProyecto.titulo)}</h3>
+        </div>
+      </div>
+    </a>`;
   }
 
-  return `<!DOCTYPE html>
+  // Fix header links to be absolute
+  let fixedHeader = headerContent
+    .replace(/href="index\.html/g, 'href="/')
+    .replace(/data-contact-open=""/g, '');
+
+  // Generate the final HTML
+  const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
-  <meta name="keywords" content="diseño de interiores, ${escapeHtml(proyecto.categoria || '')}, ${escapeHtml(proyecto.ubicacion || '')}">
+${headContent}
   <title>${escapeHtml(proyecto.titulo)} — Ritta Estudio</title>
-  <meta name="author" content="Ritta Estudio">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
-
-  <!-- Open Graph / Social Media -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
+  <meta name="description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
   <meta property="og:title" content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
   <meta property="og:description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
   <meta property="og:image" content="${escapeHtml(imagenes.length > 0 ? imagenes[0].url : 'https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg')}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
 
-  <!-- Twitter Card -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
-  <meta property="twitter:title" content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
-  <meta property="twitter:description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
-  <meta property="twitter:image" content="${escapeHtml(imagenes.length > 0 ? imagenes[0].url : 'https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg')}">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-
-  <!-- Fonts & Libraries from proyectos.html -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            cream: '#F4F0EC',
-            ink:   '#0A0A0A',
-            muted: '#6B6560',
-          },
-          fontFamily: { sans: ['Manrope', 'Arial', 'sans-serif'] },
-          maxWidth:   { site: '1200px' },
-        }
-      }
-    }
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer=""></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer=""></script>
-
-  <style>
-${css}
-  </style>
+  <!-- GLightbox CSS para lightbox de imágenes -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 </head>
 
 <body>
 
-<!-- Custom cursor and mobile menu -->
-${cursorHtml}
+${cursorContent}
+${mobileMenuContent}
+${fixedHeader}
 
-<!-- Header -->
-${header}
-
-<main style="padding-top: var(--nav-h); max-width: 1200px; margin: 0 auto;">
+<main style="max-width: 1200px; margin: 0 auto; padding-top: var(--nav-h);">
 
   <!-- Breadcrumb -->
-  <div style="display: flex; gap: 8px; font-size: 13px; color: var(--muted); margin: 32px clamp(16px,5vw,48px); flex-wrap: wrap;">
-    <a href="/" style="color: var(--ink);">Inicio</a>
-    <span>/</span>
-    <a href="/proyectos.html" style="color: var(--ink);">Proyectos</a>
-    <span>/</span>
-    <span>${escapeHtml(proyecto.titulo)}</span>
-  </div>
+  <nav class="site-pad py-8" style="padding: 32px clamp(16px,5vw,48px);">
+    <div style="display: flex; gap: 8px; font-size: 13px; color: var(--muted); flex-wrap: wrap;">
+      <a href="/" style="color: var(--ink);">Inicio</a>
+      <span>/</span>
+      <a href="/proyectos.html" style="color: var(--ink);">Proyectos</a>
+      <span>/</span>
+      <span>${escapeHtml(proyecto.titulo)}</span>
+    </div>
+  </nav>
 
-  <!-- Hero Section -->
-  <section style="padding: 0 clamp(16px,5vw,48px) 64px;">
-    <h1 class="t-hero" style="margin-bottom: 24px;">${escapeHtml(proyecto.titulo)}</h1>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; font-size: 13px; margin-bottom: 32px;">
-      ${proyecto.cliente ? `<div><span style="color: var(--muted);">Cliente</span><br><strong>${escapeHtml(proyecto.cliente)}</strong></div>` : ''}
-      ${proyecto.ubicacion ? `<div><span style="color: var(--muted);">Ubicación</span><br><strong>${escapeHtml(proyecto.ubicacion)}</strong></div>` : ''}
-      ${proyecto.area ? `<div><span style="color: var(--muted);">Área</span><br><strong>${proyecto.area} m²</strong></div>` : ''}
-      ${proyecto.año ? `<div><span style="color: var(--muted);">Año</span><br><strong>${proyecto.año}</strong></div>` : ''}
+  <!-- Hero Section with Project Info -->
+  <section class="site-pad" style="padding: 0 clamp(16px,5vw,48px) 64px; border-bottom: 1px solid var(--border);">
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12">
+      <div>
+        <h1 class="t-hero mb-6">${escapeHtml(proyecto.titulo)}</h1>
+        ${proyecto.descripcion ? `<p class="t-paragraph max-w-2xl">${escapeHtml(proyecto.descripcion)}</p>` : ''}
+      </div>
+    </div>
+
+    <!-- Project Details Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 py-8" style="border-top: 1px solid var(--border);">
+      ${proyecto.cliente ? `<div><span class="t-label opacity-40">Cliente</span><p class="mt-2">${escapeHtml(proyecto.cliente)}</p></div>` : ''}
+      ${proyecto.ubicacion ? `<div><span class="t-label opacity-40">Ubicación</span><p class="mt-2">${escapeHtml(proyecto.ubicacion)}</p></div>` : ''}
+      ${proyecto.area ? `<div><span class="t-label opacity-40">Área</span><p class="mt-2">${proyecto.area} m²</p></div>` : ''}
+      ${proyecto.año ? `<div><span class="t-label opacity-40">Año</span><p class="mt-2">${proyecto.año}</p></div>` : ''}
+      ${proyecto.categoria ? `<div><span class="t-label opacity-40">Categoría</span><p class="mt-2">${escapeHtml(proyecto.categoria)}</p></div>` : ''}
+      ${proyecto.estilo ? `<div><span class="t-label opacity-40">Estilo</span><p class="mt-2">${escapeHtml(proyecto.estilo)}</p></div>` : ''}
     </div>
   </section>
 
   <!-- Gallery -->
   ${imagenes.length > 0 ? `
-  <section style="padding: 0 clamp(16px,5vw,48px) 64px;">
-    <h2 class="t-section" style="margin-bottom: 32px;">Galería</h2>
+  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px);">
+    <h2 class="t-section mb-12">Galería</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
       ${imagensList}
     </div>
   </section>
   ` : ''}
 
-  <!-- Metadata -->
-  <section style="padding: 0 clamp(16px,5vw,48px) 64px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 32px;">
-    ${proyecto.categoria ? `<div><span class="t-label" style="color: var(--muted);">Categoría</span><p>${escapeHtml(proyecto.categoria)}</p></div>` : ''}
-    ${proyecto.estilo ? `<div><span class="t-label" style="color: var(--muted);">Estilo</span><p>${escapeHtml(proyecto.estilo)}</p></div>` : ''}
-    ${proyecto.area ? `<div><span class="t-label" style="color: var(--muted);">Área</span><p>${proyecto.area} m²</p></div>` : ''}
-    ${proyecto.año ? `<div><span class="t-label" style="color: var(--muted);">Año</span><p>${proyecto.año}</p></div>` : ''}
-  </section>
-
-  <!-- Description -->
+  <!-- Full Description -->
   ${proyecto.descripcion_larga ? `
-  <section style="padding: 0 clamp(16px,5vw,48px) 64px; max-width: 600px;">
-    <h2 class="t-section" style="margin-bottom: 24px;">Descripción</h2>
-    <div style="line-height: 1.8; color: var(--muted);">
-      ${proyecto.descripcion_larga.split('\\n').map(p => `<p style="margin-bottom: 16px;">${escapeHtml(p)}</p>`).join('')}
+  <section class="site-pad" style="padding: 0 clamp(16px,5vw,48px) 64px; border-top: 1px solid var(--border);">
+    <div class="max-w-2xl py-12">
+      <h2 class="t-section mb-8">Descripción</h2>
+      <div class="space-y-4" style="line-height: 1.8;">
+        ${proyecto.descripcion_larga.split('\\n').map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+      </div>
     </div>
   </section>
   ` : ''}
 
   <!-- Videos -->
   ${videos.length > 0 ? `
-  <section style="padding: 0 clamp(16px,5vw,48px) 64px;">
-    <h2 class="t-section" style="margin-bottom: 32px;">Videos</h2>
+  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px); border-top: 1px solid var(--border);">
+    <h2 class="t-section mb-12">Videos</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
       ${videosList}
     </div>
   </section>
   ` : ''}
 
-  <!-- Project Navigation -->
+  <!-- Next/Previous Projects -->
   ${prevProyecto || nextProyecto ? `
-  <section style="padding: 0 clamp(16px,5vw,48px) 64px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin: 64px 0;">
-    ${prevProyecto ? `<div><span class="t-label" style="color: var(--muted);">Proyecto anterior</span>${prevProjectLink}</div>` : ''}
-    ${nextProyecto ? `<div><span class="t-label" style="color: var(--muted);">Siguiente proyecto</span>${nextProjectLink}</div>` : ''}
+  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px); border-top: 1px solid var(--border);">
+    <h2 class="t-section mb-8">Más proyectos</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+      ${navLinks}
+    </div>
   </section>
   ` : ''}
 
-  <!-- CTA -->
-  <section style="text-align: center; padding: 64px clamp(16px,5vw,48px); border-top: 1px solid var(--border); margin-top: 64px;">
-    <h2 class="t-section" style="margin-bottom: 16px;">¿Inspirado?</h2>
-    <p style="margin-bottom: 24px; color: var(--muted);">Descubrí más proyectos de Ritta Estudio</p>
-    <a href="/proyectos.html" class="btn btn-outline" style="display: inline-flex; padding: 11px 26px;">
-      <span>Ver todos los proyectos</span>
+  <!-- CTA Back to Projects -->
+  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px); text-align: center; border-top: 1px solid var(--border);">
+    <a href="/proyectos.html" class="btn btn-solid" style="display: inline-flex; background: var(--ink); color: var(--white); border: 1px solid var(--ink); border-radius: var(--radius-pill); padding: 11px 26px; text-decoration: none; font-size: 11px; font-weight: 500; letter-spacing: 0.11em; text-transform: uppercase;">
+      Ver todos los proyectos
     </a>
   </section>
 
 </main>
 
-<!-- Footer -->
-<footer style="background: var(--ink); color: var(--white); padding: 48px 0; text-align: center; margin-top: 64px;">
-  <div style="max-width: 1200px; margin: 0 auto; padding: 0 clamp(16px,5vw,48px);">
-    <p style="margin-bottom: 8px;">© ${new Date().getFullYear()} Ritta Estudio. Todos los derechos reservados.</p>
-    <p style="font-size: 12px; color: rgba(255,255,255,0.6);">Diseño y contenido</p>
-  </div>
-</footer>
+${footerContent}
+
+<!-- GLightbox JS para lightbox de imágenes -->
+<script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+<script>
+  const lightbox = GLightbox({
+    selector: '.glightbox',
+    touchNavigation: true,
+    keyboardNavigation: true
+  });
+</script>
+
+${scripts}
+
+<script>
+  // Fix year in footer
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
 
 </body>
 </html>`;
+
+  return html;
 }
 
 // Main function
