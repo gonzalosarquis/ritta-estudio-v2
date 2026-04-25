@@ -2022,10 +2022,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event listeners for static project cards (if any exist on page load)
   // Dynamic cards will have listeners attached after loading from Supabase
   document.querySelectorAll('.project-card').forEach(card => {
-    attachProjectCardListeners(card);
-  });
-
-  function attachProjectCardListeners(card) {
     card.addEventListener('click', (e) => {
       e.preventDefault();
       openProjectModal(card);
@@ -2036,7 +2032,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openProjectModal(card);
       }
     });
-  }
+  });
 
   modalCloseTargets.forEach(el => {
     el.addEventListener('click', closeProjectModal);
@@ -2166,7 +2162,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const cards = document.querySelectorAll('.project-card');
       console.log('✅ Attachando listeners a', cards.length, 'tarjetas');
       cards.forEach(card => {
-        attachProjectCardListeners(card);
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          openProjectModal(card);
+        });
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openProjectModal(card);
+          }
+        });
       });
       console.log('✅ Listeners attached');
 
