@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npm run generate",
+  "buildCommand": "npm install && npm run generate",
   "outputDirectory": "."
 }
