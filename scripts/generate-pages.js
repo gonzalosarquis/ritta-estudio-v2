@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 
 require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mefqkijoijoxqjledkib.supabase.co';
+const SUPABASE_URL      = process.env.SUPABASE_URL || 'https://mefqkijoijoxqjledkib.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 if (!SUPABASE_ANON_KEY) {
-  console.error('❌ Error: SUPABASE_ANON_KEY environment variable is not set');
+  console.error('❌ Error: SUPABASE_ANON_KEY no está configurada');
   process.exit(1);
 }
 
-console.log(`📍 Conectando a: ${SUPABASE_URL}`);
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Slug generation
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function generateSlug(titulo) {
   return titulo
     .toLowerCase()
@@ -28,327 +28,415 @@ function generateSlug(titulo) {
     .replace(/^-+|-+$/g, '');
 }
 
-// Extract YouTube video ID
 function getYouTubeId(url) {
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-  return match ? match[1] : null;
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+  return m ? m[1] : null;
 }
 
-// Escape HTML
 function escapeHtml(text) {
   if (!text) return '';
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  };
-  return text.replace(/[&<>"']/g, (char) => map[char]);
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-// Create directory
 function ensureDir(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-// Read proyectos.html template
-function getProyectosTemplate() {
-  const proyectosPath = path.join(__dirname, '../proyectos.html');
-  if (!fs.existsSync(proyectosPath)) {
-    throw new Error('proyectos.html no encontrado');
+// ─── Template splitting ───────────────────────────────────────────────────────
+// Strategy: take proyectos.html as-is and replace only the content section.
+// We split on two reliable comment markers present in proyectos.html:
+//
+//   SPLIT_BEFORE  →  right before the §1 hero comment block
+//   SPLIT_AFTER   →  right at <footer  (start of footer)
+//
+// Everything before SPLIT_BEFORE   = shell_top    (head + cursor + nav + header)
+// Everything from   SPLIT_AFTER    = shell_bottom  (footer + scripts + JS)
+// We inject the project content between the two.
+
+const SPLIT_BEFORE = '<!-- ════════════════════════════════════════════\n     §1 · HERO';
+const SPLIT_AFTER  = '<footer ';
+
+function getShells() {
+  const src = fs.readFileSync(
+    path.join(__dirname, '../proyectos.html'), 'utf-8'
+  );
+
+  const beforeIdx = src.indexOf(SPLIT_BEFORE);
+  const afterIdx  = src.indexOf(SPLIT_AFTER);
+
+  if (beforeIdx === -1 || afterIdx === -1) {
+    throw new Error('No se encontraron los marcadores en proyectos.html');
   }
-  return fs.readFileSync(proyectosPath, 'utf-8');
+
+  const top    = src.slice(0, beforeIdx);
+  const bottom = src.slice(afterIdx);
+
+  return { top, bottom };
 }
 
-// Generate project page HTML using proyectos.html as base
-function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
-  const template = getProyectosTemplate();
+// ─── Content builder ─────────────────────────────────────────────────────────
 
-  // Extract head section
-  const headMatch = template.match(/<head>([\s\S]*?)<\/head>/);
-  const headContent = headMatch ? headMatch[1] : '';
+function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
+  const slug  = proyecto.slug || generateSlug(proyecto.titulo);
+  const ogImg = imagenes[0]?.url || '';
 
-  // Extract header
-  const headerMatch = template.match(/<header id="site-header"[\s\S]*?<\/header>/);
-  const headerContent = headerMatch ? headerMatch[0] : '';
+  // Gallery: each image wrapped in a link so GLightbox can open it
+  const galleryItems = imagenes.map((img, i) => `
+        <a href="${escapeHtml(img.url)}"
+           class="glightbox project-gallery__item"
+           data-gallery="gallery-${escapeHtml(slug)}"
+           data-description="${escapeHtml(proyecto.titulo)} — imagen ${i + 1}">
+          <img src="${escapeHtml(img.url)}"
+               alt="${escapeHtml(proyecto.titulo)} — imagen ${i + 1}"
+               loading="${i === 0 ? 'eager' : 'lazy'}"
+               class="project-gallery__img">
+        </a>`).join('');
 
-  // Extract footer
-  const footerMatch = template.match(/<footer[\s\S]*?<\/footer>/);
-  const footerContent = footerMatch ? footerMatch[0] : '';
+  // Videos
+  const videoItems = videos.map(v => {
+    const id = getYouTubeId(v.url_youtube);
+    if (!id) return '';
+    return `
+        <div class="project-video__wrap">
+          <iframe src="https://www.youtube.com/embed/${id}"
+                  title="${escapeHtml(v.titulo || proyecto.titulo)}"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  class="project-video__frame"></iframe>
+        </div>`;
+  }).filter(Boolean).join('');
 
-  // Extract cursor and mobile menu
-  const cursorMatch = template.match(/<div id="cursor"[\s\S]*?<div id="cursor-dot"[\s\S]*?<\/div>/);
-  const cursorContent = cursorMatch ? cursorMatch[0] : '';
+  // Prev / Next navigation
+  const idx  = allProyectos.findIndex(p => p.id === proyecto.id);
+  const prev = idx > 0 ? allProyectos[idx - 1] : null;
+  const next = idx < allProyectos.length - 1 ? allProyectos[idx + 1] : null;
 
-  // Extract mobile menu
-  const mobileMenuMatch = template.match(/<div id="mobile-menu"[\s\S]*?(?=\n<!-- ════|<header)/);
-  const mobileMenuContent = mobileMenuMatch ? mobileMenuMatch[0] : '';
+  const prevHtml = prev ? `
+        <a href="/proyecto/${prev.slug || generateSlug(prev.titulo)}/" class="project-nav__link">
+          <span class="t-label opacity-40">← Anterior</span>
+          <span class="project-nav__title">${escapeHtml(prev.titulo)}</span>
+        </a>` : '<div></div>';
 
-  // Extract scripts from proyectos.html
-  const scriptsMatch = template.match(/<script[\s\S]*?<\/script>/g) || [];
-  let scripts = scriptsMatch.join('\n');
+  const nextHtml = next ? `
+        <a href="/proyecto/${next.slug || generateSlug(next.titulo)}/" class="project-nav__link project-nav__link--right">
+          <span class="t-label opacity-40">Siguiente →</span>
+          <span class="project-nav__title">${escapeHtml(next.titulo)}</span>
+        </a>` : '<div></div>';
 
-  // Remove the project modal and contact modal related code
-  scripts = scripts.replace(/openProjectModal[\s\S]*?}\s*function/g, 'function');
-
-  // Build image gallery HTML with lightbox
-  const imagensList = imagenes
-    .map((img, idx) => {
-      return `<a href="${escapeHtml(img.url)}" class="glightbox w-full h-auto object-cover" data-gallery="project-gallery">
-        <img src="${escapeHtml(img.url)}" alt="Proyecto ${escapeHtml(proyecto.titulo)} - imagen ${idx + 1}" loading="lazy" class="w-full h-auto object-cover rounded cursor-pointer hover:opacity-80 transition">
-      </a>`;
-    })
-    .join('\n        ');
-
-  // Build videos HTML
-  const videosList = videos
-    .map((video) => {
-      const videoId = getYouTubeId(video.url_youtube);
-      if (!videoId) return '';
-      return `<div class="relative w-full" style="padding-bottom: 56.25%; height: 0;">
-        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
-      </div>`;
-    })
-    .filter(v => v)
-    .join('\n        ');
-
-  // Find previous and next projects
-  const currentIndex = todosLosProyectos.findIndex(p => p.id === proyecto.id);
-  const prevProyecto = currentIndex > 0 ? todosLosProyectos[currentIndex - 1] : null;
-  const nextProyecto = currentIndex < todosLosProyectos.length - 1 ? todosLosProyectos[currentIndex + 1] : null;
-
-  let navLinks = '';
-  if (prevProyecto) {
-    const prevSlug = prevProyecto.slug || generateSlug(prevProyecto.titulo);
-    navLinks += `<a href="/proyecto/${prevSlug}/" class="group block py-8 lg:py-12 border-b border-solid" style="border-color: var(--border);">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="t-label opacity-40 mb-2">← Anterior</p>
-          <h3 class="t-section">${escapeHtml(prevProyecto.titulo)}</h3>
-        </div>
-      </div>
-    </a>`;
-  }
-
-  if (nextProyecto) {
-    const nextSlug = nextProyecto.slug || generateSlug(nextProyecto.titulo);
-    navLinks += `<a href="/proyecto/${nextSlug}/" class="group block py-8 lg:py-12 border-b border-solid" style="border-color: var(--border);">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="t-label opacity-40 mb-2">Siguiente →</p>
-          <h3 class="t-section">${escapeHtml(nextProyecto.titulo)}</h3>
-        </div>
-      </div>
-    </a>`;
-  }
-
-  // Fix header links to be absolute
-  let fixedHeader = headerContent
-    .replace(/href="index\.html/g, 'href="/')
-    .replace(/data-contact-open=""/g, '');
-
-  // Generate the final HTML
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-${headContent}
+  // Meta tags replacements (injected right after <head>)
+  const metaOverride = `
+  <!-- ── Project page meta override ── -->
   <title>${escapeHtml(proyecto.titulo)} — Ritta Estudio</title>
-  <meta name="description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
-  <meta property="og:title" content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
-  <meta property="og:description" content="${escapeHtml(proyecto.descripcion || proyecto.titulo)}">
-  <meta property="og:image" content="${escapeHtml(imagenes.length > 0 ? imagenes[0].url : 'https://ritta-estudio-v2.vercel.app/images/proyecto1.jpg')}">
-  <meta property="og:url" content="https://ritta-estudio-v2.vercel.app/proyecto/${generateSlug(proyecto.titulo)}/">
-
-  <!-- GLightbox CSS para lightbox de imágenes -->
+  <meta name="description" content="${escapeHtml(proyecto.descripcion || '')}">
+  <link rel="canonical" href="https://ritta-estudio-v2.vercel.app/proyecto/${escapeHtml(slug)}/">
+  <meta property="og:title"       content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
+  <meta property="og:description" content="${escapeHtml(proyecto.descripcion || '')}">
+  <meta property="og:url"         content="https://ritta-estudio-v2.vercel.app/proyecto/${escapeHtml(slug)}/">
+  ${ogImg ? `<meta property="og:image" content="${escapeHtml(ogImg)}">` : ''}
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="${escapeHtml(proyecto.titulo)} — Ritta Estudio">
+  <meta name="twitter:description" content="${escapeHtml(proyecto.descripcion || '')}">
+  ${ogImg ? `<meta name="twitter:image"       content="${escapeHtml(ogImg)}">` : ''}
+  <!-- GLightbox -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
-</head>
+  <!-- Project page styles -->
+  <style>
+    /* ── Gallery ── */
+    .project-gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 768px) { .project-gallery { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .project-gallery { grid-template-columns: 1fr; } }
 
-<body>
+    .project-gallery__item {
+      display: block;
+      overflow: hidden;
+      aspect-ratio: 1;
+      border-radius: 2px;
+    }
+    .project-gallery__img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s var(--ease-out), opacity 0.3s;
+      cursor: pointer;
+    }
+    .project-gallery__item:hover .project-gallery__img {
+      transform: scale(1.04);
+      opacity: 0.9;
+    }
 
-${cursorContent}
-${mobileMenuContent}
-${fixedHeader}
+    /* ── Hero image (first) ── */
+    .project-hero-img {
+      width: 100%;
+      aspect-ratio: 16/7;
+      object-fit: cover;
+      display: block;
+      border-radius: 2px;
+    }
 
-<main style="max-width: 1200px; margin: 0 auto; padding-top: var(--nav-h);">
+    /* ── Meta grid ── */
+    .project-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 24px 32px;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 48px 0;
+    }
+    .project-meta__label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .project-meta__value {
+      font-size: 14px;
+      font-weight: 500;
+    }
 
-  <!-- Breadcrumb -->
-  <nav class="site-pad py-8" style="padding: 32px clamp(16px,5vw,48px);">
-    <div style="display: flex; gap: 8px; font-size: 13px; color: var(--muted); flex-wrap: wrap;">
-      <a href="/" style="color: var(--ink);">Inicio</a>
-      <span>/</span>
-      <a href="/proyectos.html" style="color: var(--ink);">Proyectos</a>
-      <span>/</span>
-      <span>${escapeHtml(proyecto.titulo)}</span>
+    /* ── Description ── */
+    .project-desc p { margin-bottom: 1.2em; }
+    .project-desc p:last-child { margin-bottom: 0; }
+
+    /* ── Videos ── */
+    .project-video__wrap {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 2px;
+    }
+    .project-video__frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Prev/Next navigation ── */
+    .project-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .project-nav__link {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 32px;
+      background: var(--bg);
+      text-decoration: none;
+      color: var(--ink);
+      transition: background 0.2s;
+    }
+    .project-nav__link:hover { background: rgba(10,10,10,0.04); }
+    .project-nav__link--right {
+      text-align: right;
+      align-items: flex-end;
+    }
+    .project-nav__title {
+      font-size: clamp(18px, 2.5vw, 28px);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    /* ── Breadcrumb ── */
+    .project-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 20px 0 0;
+    }
+    .project-breadcrumb a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .project-breadcrumb a:hover { color: var(--ink); }
+    .project-breadcrumb__sep { opacity: 0.4; }
+    .project-breadcrumb__current { color: var(--ink); }
+  </style>`;
+
+  return {
+    metaOverride,
+    content: `
+
+<!-- ════════════════════════════════════════════
+     PÁGINA DE PROYECTO: ${escapeHtml(proyecto.titulo)}
+════════════════════════════════════════════ -->
+<div style="padding-top: var(--nav-h);">
+  <div class="max-w-site mx-auto site-pad" style="padding-bottom: 80px;">
+
+    <!-- Breadcrumb -->
+    <nav class="project-breadcrumb" aria-label="Breadcrumb">
+      <a href="/">Inicio</a>
+      <span class="project-breadcrumb__sep">/</span>
+      <a href="/proyectos.html">Proyectos</a>
+      <span class="project-breadcrumb__sep">/</span>
+      <span class="project-breadcrumb__current">${escapeHtml(proyecto.titulo)}</span>
+    </nav>
+
+    <!-- Title + Meta -->
+    <div style="padding: 48px 0 40px;">
+      ${proyecto.categoria ? `<span class="t-badge reveal">${escapeHtml(proyecto.categoria)}</span>` : ''}
+      <h1 class="t-hero reveal" style="margin-top: 16px;">${escapeHtml(proyecto.titulo)}</h1>
+      ${proyecto.descripcion ? `<p class="t-paragraph reveal" style="margin-top: 24px; max-width: 560px;">${escapeHtml(proyecto.descripcion)}</p>` : ''}
     </div>
-  </nav>
 
-  <!-- Hero Section with Project Info -->
-  <section class="site-pad" style="padding: 0 clamp(16px,5vw,48px) 64px; border-bottom: 1px solid var(--border);">
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12">
-      <div>
-        <h1 class="t-hero mb-6">${escapeHtml(proyecto.titulo)}</h1>
-        ${proyecto.descripcion ? `<p class="t-paragraph max-w-2xl">${escapeHtml(proyecto.descripcion)}</p>` : ''}
+    <!-- Hero image (first) -->
+    ${imagenes.length > 0 ? `
+    <a href="${escapeHtml(imagenes[0].url)}"
+       class="glightbox reveal"
+       data-gallery="gallery-${escapeHtml(slug)}"
+       style="display:block; margin-bottom: 8px;">
+      <img src="${escapeHtml(imagenes[0].url)}"
+           alt="${escapeHtml(proyecto.titulo)}"
+           loading="eager"
+           class="project-hero-img">
+    </a>` : ''}
+
+    <!-- Project metadata -->
+    <div class="project-meta reveal">
+      ${proyecto.cliente  ? `<div><p class="project-meta__label">Cliente</p><p class="project-meta__value">${escapeHtml(proyecto.cliente)}</p></div>` : ''}
+      ${proyecto.ubicacion ? `<div><p class="project-meta__label">Ubicación</p><p class="project-meta__value">${escapeHtml(proyecto.ubicacion)}</p></div>` : ''}
+      ${proyecto.area     ? `<div><p class="project-meta__label">Área</p><p class="project-meta__value">${proyecto.area} m²</p></div>` : ''}
+      ${proyecto.año      ? `<div><p class="project-meta__label">Año</p><p class="project-meta__value">${proyecto.año}</p></div>` : ''}
+      ${proyecto.estilo   ? `<div><p class="project-meta__label">Estilo</p><p class="project-meta__value">${escapeHtml(proyecto.estilo)}</p></div>` : ''}
+    </div>
+
+    <!-- Gallery grid (remaining images) -->
+    ${imagenes.length > 1 ? `
+    <section style="margin-bottom: 64px;">
+      <h2 class="t-section reveal" style="margin-bottom: 24px;">Galería</h2>
+      <div class="project-gallery">
+        ${galleryItems}
       </div>
-    </div>
+    </section>` : ''}
 
-    <!-- Project Details Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 py-8" style="border-top: 1px solid var(--border);">
-      ${proyecto.cliente ? `<div><span class="t-label opacity-40">Cliente</span><p class="mt-2">${escapeHtml(proyecto.cliente)}</p></div>` : ''}
-      ${proyecto.ubicacion ? `<div><span class="t-label opacity-40">Ubicación</span><p class="mt-2">${escapeHtml(proyecto.ubicacion)}</p></div>` : ''}
-      ${proyecto.area ? `<div><span class="t-label opacity-40">Área</span><p class="mt-2">${proyecto.area} m²</p></div>` : ''}
-      ${proyecto.año ? `<div><span class="t-label opacity-40">Año</span><p class="mt-2">${proyecto.año}</p></div>` : ''}
-      ${proyecto.categoria ? `<div><span class="t-label opacity-40">Categoría</span><p class="mt-2">${escapeHtml(proyecto.categoria)}</p></div>` : ''}
-      ${proyecto.estilo ? `<div><span class="t-label opacity-40">Estilo</span><p class="mt-2">${escapeHtml(proyecto.estilo)}</p></div>` : ''}
-    </div>
-  </section>
-
-  <!-- Gallery -->
-  ${imagenes.length > 0 ? `
-  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px);">
-    <h2 class="t-section mb-12">Galería</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-      ${imagensList}
-    </div>
-  </section>
-  ` : ''}
-
-  <!-- Full Description -->
-  ${proyecto.descripcion_larga ? `
-  <section class="site-pad" style="padding: 0 clamp(16px,5vw,48px) 64px; border-top: 1px solid var(--border);">
-    <div class="max-w-2xl py-12">
-      <h2 class="t-section mb-8">Descripción</h2>
-      <div class="space-y-4" style="line-height: 1.8;">
-        ${proyecto.descripcion_larga.split('\\n').map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+    <!-- Full description -->
+    ${proyecto.descripcion_larga ? `
+    <section style="margin-bottom: 64px; max-width: 680px;">
+      <h2 class="t-section reveal" style="margin-bottom: 24px;">Sobre el proyecto</h2>
+      <div class="project-desc t-paragraph reveal" style="opacity: 0.75; line-height: 1.8;">
+        ${proyecto.descripcion_larga.split('\n').filter(Boolean).map(p => `<p>${escapeHtml(p)}</p>`).join('')}
       </div>
-    </div>
-  </section>
-  ` : ''}
+    </section>` : ''}
 
-  <!-- Videos -->
-  ${videos.length > 0 ? `
-  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px); border-top: 1px solid var(--border);">
-    <h2 class="t-section mb-12">Videos</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
-      ${videosList}
-    </div>
-  </section>
-  ` : ''}
+    <!-- Videos -->
+    ${videos.length > 0 ? `
+    <section style="margin-bottom: 64px;">
+      <h2 class="t-section reveal" style="margin-bottom: 24px;">Videos</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+        ${videoItems}
+      </div>
+    </section>` : ''}
 
-  <!-- Next/Previous Projects -->
-  ${prevProyecto || nextProyecto ? `
-  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px); border-top: 1px solid var(--border);">
-    <h2 class="t-section mb-8">Más proyectos</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
-      ${navLinks}
-    </div>
-  </section>
-  ` : ''}
+  </div><!-- /max-w-site -->
+</div>
 
-  <!-- CTA Back to Projects -->
-  <section class="site-pad" style="padding: 64px clamp(16px,5vw,48px); text-align: center; border-top: 1px solid var(--border);">
-    <a href="/proyectos.html" class="btn btn-solid" style="display: inline-flex; background: var(--ink); color: var(--white); border: 1px solid var(--ink); border-radius: var(--radius-pill); padding: 11px 26px; text-decoration: none; font-size: 11px; font-weight: 500; letter-spacing: 0.11em; text-transform: uppercase;">
-      Ver todos los proyectos
-    </a>
-  </section>
+<!-- Prev / Next navigation -->
+<div class="project-nav">
+  ${prevHtml}
+  ${nextHtml}
+</div>
 
-</main>
+<!-- Back to projects -->
+<div style="text-align:center; padding: 64px clamp(16px,5vw,48px);">
+  <a href="/proyectos.html" class="btn btn-solid">
+    <span class="btn-inner">
+      <span><span class="btn-dot" aria-hidden="true"></span> Ver todos los proyectos</span>
+      <span class="btn-inner-clone" aria-hidden="true">
+        <span><span class="btn-dot" aria-hidden="true"></span> Ver todos los proyectos</span>
+      </span>
+    </span>
+  </a>
+</div>
 
-${footerContent}
+`
+  };
+}
 
-<!-- GLightbox JS para lightbox de imágenes -->
+// ─── Page assembler ───────────────────────────────────────────────────────────
+
+function assemblePage(proyecto, imagenes, videos, allProyectos) {
+  let { top, bottom } = getShells();
+  const { metaOverride, content } = buildProjectContent(proyecto, imagenes, videos, allProyectos);
+
+  // Fix all relative links in shell (index.html#... → /)
+  top    = top.replace(/href="index\.html(#[^"]*)"/g, 'href="/$1"');
+  bottom = bottom.replace(/href="index\.html(#[^"]*)"/g, 'href="/$1"');
+
+  // Fix logo and image paths in header
+  top = top.replace(/src="images\//g, 'src="/images/');
+
+  // Inject meta overrides right after opening <head>
+  top = top.replace('<head>', '<head>\n' + metaOverride);
+
+  // Inject GLightbox before </body>
+  const glightboxScript = `
+<!-- GLightbox init -->
 <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
 <script>
-  const lightbox = GLightbox({
-    selector: '.glightbox',
-    touchNavigation: true,
-    keyboardNavigation: true
+  document.addEventListener('DOMContentLoaded', function () {
+    GLightbox({ selector: '.glightbox', touchNavigation: true });
   });
-</script>
+</script>`;
 
-${scripts}
+  bottom = bottom.replace('</body>', glightboxScript + '\n</body>');
 
-<script>
-  // Fix year in footer
-  document.getElementById('year').textContent = new Date().getFullYear();
-</script>
-
-</body>
-</html>`;
-
-  return html;
+  return top + content + bottom;
 }
 
-// Main function
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
 async function generatePages() {
-  console.log('🚀 Iniciando generación de páginas de proyectos...');
+  console.log('🚀 Generando páginas de proyectos...');
 
-  try {
-    // Fetch all published projects
-    const { data: proyectos, error: proyectosError } = await supabase
-      .from('proyectos')
-      .select('*')
-      .eq('publicado', true)
-      .order('orden', { ascending: true });
+  const { data: proyectos, error } = await supabase
+    .from('proyectos')
+    .select('*')
+    .eq('publicado', true)
+    .order('orden', { ascending: true });
 
-    if (proyectosError) {
-      console.error('Detalles del error:', proyectosError);
-      throw proyectosError;
-    }
-    if (!proyectos || proyectos.length === 0) {
-      console.log('⚠️  No hay proyectos publicados para generar');
-      return;
-    }
+  if (error) { console.error('❌', error.message); process.exit(1); }
+  if (!proyectos?.length) { console.log('⚠️  Sin proyectos publicados'); return; }
 
-    console.log(`📦 Encontrados ${proyectos.length} proyectos publicados`);
+  console.log(`📦 ${proyectos.length} proyectos encontrados`);
 
-    // For each project, fetch images and videos
-    for (const proyecto of proyectos) {
-      const slug = proyecto.slug || generateSlug(proyecto.titulo);
+  for (const proyecto of proyectos) {
+    const slug = proyecto.slug || generateSlug(proyecto.titulo);
 
-      // Fetch images
-      const { data: imagenes, error: imagenesError } = await supabase
-        .from('proyecto_imagenes')
-        .select('*')
-        .eq('proyecto_id', proyecto.id)
-        .order('orden', { ascending: true });
+    const [{ data: imagenes }, { data: videos }] = await Promise.all([
+      supabase.from('proyecto_imagenes').select('*').eq('proyecto_id', proyecto.id).order('orden'),
+      supabase.from('proyecto_videos').select('*').eq('proyecto_id', proyecto.id).order('orden'),
+    ]);
 
-      if (imagenesError) throw imagenesError;
+    const html = assemblePage(proyecto, imagenes || [], videos || [], proyectos);
 
-      // Fetch videos
-      const { data: videos, error: videosError } = await supabase
-        .from('proyecto_videos')
-        .select('*')
-        .eq('proyecto_id', proyecto.id)
-        .order('orden', { ascending: true });
-
-      if (videosError) throw videosError;
-
-      // Generate HTML
-      const html = generateProjectHTML(
-        proyecto,
-        imagenes || [],
-        videos || [],
-        proyectos
-      );
-
-      // Create directory
-      const proyectoDir = path.join(__dirname, '../proyecto', slug);
-      ensureDir(proyectoDir);
-
-      // Write file
-      const filePath = path.join(proyectoDir, 'index.html');
-      fs.writeFileSync(filePath, html, 'utf-8');
-      console.log(`✅ ${slug}/index.html`);
-    }
-
-    console.log(`\n✨ Generación completada: ${proyectos.length} páginas creadas`);
-  } catch (error) {
-    console.error('❌ Error durante generación:', error.message);
-    process.exit(1);
+    ensureDir(path.join(__dirname, '../proyecto', slug));
+    fs.writeFileSync(path.join(__dirname, '../proyecto', slug, 'index.html'), html, 'utf-8');
+    console.log(`  ✅ /proyecto/${slug}/`);
   }
+
+  console.log('\n✨ Listo!');
 }
 
-generatePages();
+generatePages().catch(e => { console.error('❌', e.message); process.exit(1); });
