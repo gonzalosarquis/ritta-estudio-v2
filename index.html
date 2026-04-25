@@ -609,6 +609,9 @@
     ════════════════════════════════════════════ */
     .project-card {
       display: block;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--ink);
     }
 
     .project-card:focus-visible {
@@ -616,20 +619,97 @@
       outline-offset: 2px;
     }
 
+    /* Image wrapper */
+    .card-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+    }
+
     .card-img {
       display: block;
       width: 100%;
-      aspect-ratio: 4 / 3;
-      transition: transform 0.65s var(--ease-out);
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s var(--ease-out);
       will-change: transform;
     }
 
-    /* (Hover effects are handled by Tailwind classes on the individual elements now) */
+    .project-card:hover .card-img {
+      transform: scale(1.06);
+    }
 
-    @media (pointer: coarse) {
-      .project-card {
-        cursor: pointer;
-      }
+    /* Dark gradient overlay — always slightly visible at bottom */
+    .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 40%,
+        rgba(10, 10, 10, 0.55) 100%
+      );
+      opacity: 0;
+      transition: opacity 0.35s ease;
+      display: flex;
+      align-items: flex-end;
+      padding: 28px;
+    }
+
+    .project-card:hover .card-overlay {
+      opacity: 1;
+    }
+
+    /* "VER PROYECTO" pill that appears on hover */
+    .card-ver {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.55);
+      border-radius: var(--radius-pill);
+      padding: 9px 20px;
+      transform: translateY(8px);
+      transition: transform 0.35s var(--ease-out), border-color 0.2s;
+    }
+
+    .project-card:hover .card-ver {
+      transform: translateY(0);
+    }
+
+    .card-ver:hover {
+      border-color: rgba(255,255,255,0.9);
+    }
+
+    /* Bottom info row */
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 14px;
+    }
+
+    .card-bottom-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-bottom-title {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .card-bottom-loc {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
     }
 
     /* ════════════════════════════════════════════
@@ -1248,15 +1328,15 @@
         transition: none;
       }
 
-      .card-img {
-        transition: none;
+      .card-img { transition: none; }
+
+      .card-overlay {
+        opacity: 1 !important;
       }
 
-      .card-ver,
-      .card-bottom {
+      .card-ver {
+        transform: none !important;
         transition: none;
-        opacity: 1;
-        transform: none;
       }
 
       #cursor,
@@ -1697,98 +1777,88 @@
 
           <!-- Card 1 -->
           <a href="#"
-            class="project-card group block py-8 lg:py-12 border-b lg:border-r lg:pr-12 border-solid object-cover"
-            style="border-color: var(--border);" aria-label="Proyecto: Sala principal — Palermo"
+            class="project-card block py-8 lg:py-12 border-b lg:border-r lg:pr-12 border-solid"
+            style="border-color: var(--border);" aria-label="Ver proyecto: DISEÑO DE SALA DE ESTAR"
             data-project-title="DISEÑO DE SALA DE ESTAR"
             data-project-description="El mobiliario fue seleccionado con foco en ergonomía y estilo. Un sofá esquinero y elementos modulares ayudan a crear una experiencia cómoda para relajarse y socializar."
             data-project-category="LIVING ROOM" data-project-location="Palermo, Buenos Aires"
             data-project-client="TESORO COMPLEX" data-project-area="64" data-project-year="2024"
             data-project-style="MODERN"
             data-project-images="images/proyecto1.jpg,images/proyecto2.jpg,images/proyecto3.jpg">
-            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
-              <img src="images/proyecto1.jpg" alt="Diseño de sala de estar moderno en Palermo, Buenos Aires - Ritta Estudio"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            <div class="card-wrap">
+              <img src="images/proyecto1.jpg" alt="Diseño de sala de estar — Ritta Estudio" class="card-img">
+              <div class="card-overlay"><span class="card-ver">Ver proyecto</span></div>
             </div>
-            <div class="flex items-center justify-between">
-              <h3 class="text-[13px] font-medium tracking-wide uppercase">DISEÑO DE SALA DE ESTAR</h3>
-              <div class="btn btn-solid shrink-0">
-                <span class="btn-inner">
-                  <span>VER</span>
-                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
-                </span>
+            <div class="card-bottom">
+              <div class="card-bottom-meta">
+                <span class="card-bottom-title">DISEÑO DE SALA DE ESTAR</span>
+                <span class="card-bottom-loc">Palermo · Living room</span>
               </div>
             </div>
           </a>
 
           <!-- Card 2 -->
-          <a href="#" class="project-card group block py-8 lg:py-12 border-b lg:pl-12 border-solid"
-            style="border-color: var(--border);" aria-label="Proyecto: Cocina moderna — Recoleta"
+          <a href="#"
+            class="project-card block py-8 lg:py-12 border-b lg:pl-12 border-solid"
+            style="border-color: var(--border);" aria-label="Ver proyecto: COCINA MODERNA"
             data-project-title="COCINA MODERNA"
             data-project-description="Diseño de cocina funcional con circulación fluida, almacenamiento oculto y materiales resistentes. La iluminación en capas mejora el uso diario y realza los acabados."
             data-project-category="KITCHEN" data-project-location="Recoleta, Buenos Aires"
             data-project-client="VILAR FAMILY" data-project-area="38" data-project-year="2023"
             data-project-style="CONTEMPORARY"
             data-project-images="images/proyecto2.jpg,images/proyecto1.jpg,images/proyecto4.jpg">
-            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
-              <img src="images/proyecto2.jpg" alt="Diseño de cocina moderna y funcional en Recoleta, Buenos Aires - Ritta Estudio"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            <div class="card-wrap">
+              <img src="images/proyecto2.jpg" alt="Cocina moderna — Ritta Estudio" class="card-img">
+              <div class="card-overlay"><span class="card-ver">Ver proyecto</span></div>
             </div>
-            <div class="flex items-center justify-between">
-              <h3 class="text-[13px] font-medium tracking-wide uppercase">COCINA MODERNA</h3>
-              <div class="btn btn-solid shrink-0">
-                <span class="btn-inner">
-                  <span>VER</span>
-                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
-                </span>
+            <div class="card-bottom">
+              <div class="card-bottom-meta">
+                <span class="card-bottom-title">COCINA MODERNA</span>
+                <span class="card-bottom-loc">Recoleta · Kitchen</span>
               </div>
             </div>
           </a>
 
           <!-- Card 3 -->
           <a href="#"
-            class="project-card group block py-8 lg:py-12 border-b lg:border-b-0 lg:border-r lg:pr-12 border-solid"
-            style="border-color: var(--border);" aria-label="Proyecto: Suite principal — Belgrano"
+            class="project-card block py-8 lg:py-12 border-b lg:border-b-0 lg:border-r lg:pr-12 border-solid"
+            style="border-color: var(--border);" aria-label="Ver proyecto: SUITE PRINCIPAL"
             data-project-title="SUITE PRINCIPAL"
             data-project-description="Suite principal pensada para descanso y privacidad. Se trabajó una paleta neutra con texturas suaves y una distribución que integra dormitorio, vestidor y área de lectura."
             data-project-category="BEDROOM" data-project-location="Belgrano, Buenos Aires"
             data-project-client="NOVA RESIDENCE" data-project-area="52" data-project-year="2024"
             data-project-style="WARM MINIMAL"
             data-project-images="images/proyecto3.jpg,images/proyecto2.jpg,images/proyecto1.jpg">
-            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
-              <img src="images/proyecto3.jpg" alt="Diseño de suite principal elegante en Belgrano, Buenos Aires - Ritta Estudio"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            <div class="card-wrap">
+              <img src="images/proyecto3.jpg" alt="Suite principal — Ritta Estudio" class="card-img">
+              <div class="card-overlay"><span class="card-ver">Ver proyecto</span></div>
             </div>
-            <div class="flex items-center justify-between">
-              <h3 class="text-[13px] font-medium tracking-wide uppercase">SUITE PRINCIPAL</h3>
-              <div class="btn btn-solid shrink-0">
-                <span class="btn-inner">
-                  <span>VER</span>
-                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
-                </span>
+            <div class="card-bottom">
+              <div class="card-bottom-meta">
+                <span class="card-bottom-title">SUITE PRINCIPAL</span>
+                <span class="card-bottom-loc">Belgrano · Bedroom</span>
               </div>
             </div>
           </a>
 
           <!-- Card 4 -->
-          <a href="#" class="project-card group block py-8 lg:py-12 border-b-0 lg:pl-12 border-solid"
-            style="border-color: var(--border);" aria-label="Proyecto: Oficina ejecutiva — Puerto Madero"
+          <a href="#"
+            class="project-card block py-8 lg:py-12 border-b-0 lg:pl-12 border-solid"
+            style="border-color: var(--border);" aria-label="Ver proyecto: OFICINA EJECUTIVA"
             data-project-title="OFICINA EJECUTIVA"
             data-project-description="Proyecto corporativo con foco en presencia de marca, confort acústico y productividad. Se incorporaron zonas de reunión y trabajo flexible en un mismo lenguaje visual."
             data-project-category="OFFICE" data-project-location="Puerto Madero, Buenos Aires"
             data-project-client="ALTA CAPITAL" data-project-area="72" data-project-year="2024"
             data-project-style="MODERN"
             data-project-images="images/proyecto4.jpg,images/proyecto2.jpg,images/proyecto3.jpg">
-            <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
-              <img src="images/proyecto4.jpg" alt="Diseño de oficina ejecutiva moderna en Puerto Madero, Buenos Aires - Ritta Estudio"
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            <div class="card-wrap">
+              <img src="images/proyecto4.jpg" alt="Oficina ejecutiva — Ritta Estudio" class="card-img">
+              <div class="card-overlay"><span class="card-ver">Ver proyecto</span></div>
             </div>
-            <div class="flex items-center justify-between">
-              <h3 class="text-[13px] font-medium tracking-wide uppercase">OFICINA EJECUTIVA</h3>
-              <div class="btn btn-solid shrink-0">
-                <span class="btn-inner">
-                  <span>VER</span>
-                  <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
-                </span>
+            <div class="card-bottom">
+              <div class="card-bottom-meta">
+                <span class="card-bottom-title">OFICINA EJECUTIVA</span>
+                <span class="card-bottom-loc">Puerto Madero · Office</span>
               </div>
             </div>
           </a>
@@ -2706,9 +2776,9 @@
 
           return `
             <a href="#"
-              class="project-card group block py-8 lg:py-12 ${borderClasses} border-solid object-cover"
+              class="project-card block py-8 lg:py-12 ${borderClasses} border-solid"
               style="border-color: var(--border);"
-              aria-label="Proyecto: ${proyecto.titulo} — ${proyecto.ubicacion}"
+              aria-label="Ver proyecto: ${proyecto.titulo}"
               data-project-title="${proyecto.titulo}"
               data-project-description="${proyecto.descripcion}"
               data-project-category="${proyecto.categoria}"
@@ -2718,17 +2788,14 @@
               data-project-year="${proyecto.año}"
               data-project-style="${proyecto.estilo}"
               data-project-images="${images}">
-              <div class="w-full relative overflow-hidden mb-6" style="aspect-ratio: 1.45;">
-                <img src="${mainImage}" alt="${proyecto.titulo} - Ritta Estudio"
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+              <div class="card-wrap">
+                <img src="${mainImage}" alt="${proyecto.titulo} — Ritta Estudio" class="card-img">
+                <div class="card-overlay"><span class="card-ver">Ver proyecto</span></div>
               </div>
-              <div class="flex items-center justify-between">
-                <h3 class="text-[13px] font-medium tracking-wide uppercase">${proyecto.titulo}</h3>
-                <div class="btn btn-solid shrink-0">
-                  <span class="btn-inner">
-                    <span>VER</span>
-                    <span class="btn-inner-clone" aria-hidden="true"><span>VER</span></span>
-                  </span>
+              <div class="card-bottom">
+                <div class="card-bottom-meta">
+                  <span class="card-bottom-title">${proyecto.titulo}</span>
+                  <span class="card-bottom-loc">${proyecto.ubicacion || ''} · ${proyecto.categoria || ''}</span>
                 </div>
               </div>
             </a>
