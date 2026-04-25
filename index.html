@@ -2562,7 +2562,7 @@
         selectProjectImage(activeProjectImages, nextIndex);
       }
 
-      function openProjectModal(card) {
+      window.openProjectModal = function openProjectModal(card) {
         const images = getProjectImages(card);
         if (!images.length) return;
 
