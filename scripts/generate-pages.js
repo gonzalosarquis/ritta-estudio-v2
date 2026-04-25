@@ -95,16 +95,35 @@ function extractHeadFromProyectos() {
   return headExtras;
 }
 
-// Extract header HTML from proyectos.html
-function extractHeaderFromProyectos() {
-  const proyectosPath = path.join(__dirname, '../proyectos.html');
-  if (!fs.existsSync(proyectosPath)) return '';
+// Generate a simple, functional header
+function generateHeaderForProject() {
+  return `<header id="site-header" role="banner">
+  <div class="max-w-site mx-auto h-full site-pad flex items-center justify-between" style="padding: 0 clamp(16px,5vw,48px); display: flex; align-items: center; justify-content: space-between; height: var(--nav-h);">
 
-  const content = fs.readFileSync(proyectosPath, 'utf-8');
+    <a href="/" class="flex-shrink-0" aria-label="Ritta Estudio — Inicio">
+      <img src="/images/logo.png" alt="Ritta Estudio Logo" class="h-4 sm:h-5 md:h-[20px] w-auto block" style="height: 20px; width: auto;">
+    </a>
 
-  // Extract header section
-  const headerMatch = content.match(/<header id="site-header"[\s\S]*?<\/header>/);
-  return headerMatch ? headerMatch[0] : '';
+    <nav class="hidden md:flex items-center gap-8" aria-label="Navegación principal" style="display: none;">
+      <a href="/" class="nav-link">Inicio</a>
+      <a href="/proyectos.html" class="nav-link active">Proyectos</a>
+      <a href="/" class="nav-link">Servicios</a>
+      <a href="/" class="nav-link">Contacto</a>
+    </nav>
+
+    <div class="flex items-center gap-5">
+      <a href="/proyectos.html" class="btn btn-outline hidden sm:inline-flex" style="display: inline-flex; border: 1px solid var(--ink); border-radius: var(--radius-pill); padding: 11px 26px; background: transparent; color: var(--ink); text-decoration: none; font-size: 11px; font-weight: 500; letter-spacing: 0.11em; text-transform: uppercase;">
+        Proyectos
+      </a>
+      <button id="hamburger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu" class="md:hidden flex flex-col gap-[5px] p-2 bg-transparent border-none cursor-pointer" style="display: none;">
+        <span class="hb-line" style="display: block; width: 22px; height: 1.5px; background: var(--ink); border-radius: 2px;"></span>
+        <span class="hb-line" style="display: block; width: 22px; height: 1.5px; background: var(--ink); border-radius: 2px;"></span>
+        <span class="hb-line" style="display: block; width: 22px; height: 1.5px; background: var(--ink); border-radius: 2px;"></span>
+      </button>
+    </div>
+
+  </div>
+</header>`;
 }
 
 // Extract cursor HTML from proyectos.html
@@ -129,7 +148,7 @@ function extractCursorFromProyectos() {
 function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
   const css = extractCSSFromProyectos();
   const headExtras = extractHeadFromProyectos();
-  const header = extractHeaderFromProyectos();
+  const header = generateHeaderForProject();
   const cursorHtml = extractCursorFromProyectos();
 
   // Build image gallery HTML
