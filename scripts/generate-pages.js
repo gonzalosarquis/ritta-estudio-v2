@@ -126,22 +126,11 @@ function generateHeaderForProject() {
 </header>`;
 }
 
-// Extract cursor HTML from proyectos.html
-function extractCursorFromProyectos() {
-  const proyectosPath = path.join(__dirname, '../proyectos.html');
-  if (!fs.existsSync(proyectosPath)) return '';
-
-  const content = fs.readFileSync(proyectosPath, 'utf-8');
-
-  // Extract cursor divs and mobile menu
-  const cursorMatch = content.match(/<div id="cursor"[\s\S]*?<\/div>\s*<div id="cursor-dot"[\s\S]*?<\/div>/);
-  const mobileMenuMatch = content.match(/<div id="mobile-menu"[\s\S]*?<\/div>/);
-
-  let result = '';
-  if (cursorMatch) result += cursorMatch[0] + '\n\n';
-  if (mobileMenuMatch) result += mobileMenuMatch[0] + '\n\n';
-
-  return result;
+// Generate simple cursor HTML
+function generateCursorHtml() {
+  return `<!-- Custom cursor (2 layers: ring + dot) -->
+<div id="cursor" aria-hidden="true"></div>
+<div id="cursor-dot" aria-hidden="true"></div>`;
 }
 
 // Generate project page HTML
@@ -149,7 +138,7 @@ function generateProjectHTML(proyecto, imagenes, videos, todosLosProyectos) {
   const css = extractCSSFromProyectos();
   const headExtras = extractHeadFromProyectos();
   const header = generateHeaderForProject();
-  const cursorHtml = extractCursorFromProyectos();
+  const cursorHtml = generateCursorHtml();
 
   // Build image gallery HTML
   const imagensList = imagenes
