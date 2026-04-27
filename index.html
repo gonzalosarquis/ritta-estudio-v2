@@ -1657,13 +1657,21 @@
             </div>
           </div>
 
-          <button type="button" class="btn btn-outline mt-8" data-project-close="" data-contact-open="">
-            <span class="btn-inner">
-              <span><span class="btn-dot" aria-hidden="true"></span>Contactarme</span>
-              <span class="btn-inner-clone" aria-hidden="true"><span><span class="btn-dot" aria-hidden="true"></span>Get
-                  in touch</span></span>
-            </span>
-          </button>
+          <div class="flex flex-col gap-3 mt-8">
+            <a id="project-modal-link" href="#" class="btn btn-solid" style="text-decoration:none; display:none;">
+              <span class="btn-inner">
+                <span>Ver proyecto completo</span>
+                <span class="btn-inner-clone" aria-hidden="true"><span>Ver proyecto completo</span></span>
+              </span>
+            </a>
+            <button type="button" class="btn btn-outline" data-project-close="" data-contact-open="">
+              <span class="btn-inner">
+                <span><span class="btn-dot" aria-hidden="true"></span>Contactarme</span>
+                <span class="btn-inner-clone" aria-hidden="true"><span><span class="btn-dot" aria-hidden="true"></span>Get
+                    in touch</span></span>
+              </span>
+            </button>
+          </div>
         </div>
 
         <div class="project-modal__media">
@@ -2671,6 +2679,8 @@
         selectProjectImage(activeProjectImages, nextIndex);
       }
 
+      const projectModalLink = document.getElementById('project-modal-link');
+
       window.openProjectModal = function openProjectModal(card) {
         const images = getProjectImages(card);
         if (!images.length) return;
@@ -2684,6 +2694,14 @@
         projectModalLocation.textContent = card.dataset.projectLocation || '-';
         projectModalYear.textContent = card.dataset.projectYear || '-';
         projectModalStyle.textContent = card.dataset.projectStyle || '-';
+
+        const slug = card.dataset.projectSlug;
+        if (slug) {
+          projectModalLink.href = '/proyecto/' + slug + '/';
+          projectModalLink.style.display = '';
+        } else {
+          projectModalLink.style.display = 'none';
+        }
 
         activeProjectImages = images;
         activeImageIndex = 0;
@@ -2839,6 +2857,7 @@
               data-project-area="${proyecto.area || ''}"
               data-project-year="${proyecto.año}"
               data-project-style="${proyecto.estilo}"
+              data-project-slug="${proyecto.slug || ''}"
               data-project-images="${images}">
               <div class="card-wrap">
                 <img src="${mainImage}" alt="${proyecto.titulo} — Ritta Estudio" class="card-img">
