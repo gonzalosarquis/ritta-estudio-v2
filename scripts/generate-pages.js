@@ -114,16 +114,15 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
                   class="project-video__frame"></iframe>
         </div>`;
     } else {
-      // Video subido directamente (Supabase Storage u otro CDN)
+      // Video subido directamente — respeta el aspecto natural (vertical, cuadrado, etc.)
       return `
-        <div class="project-video__wrap">
+        <div class="project-video__wrap project-video__wrap--native">
           <video src="${escapeHtml(url)}"
                  title="${escapeHtml(v.titulo || proyecto.titulo)}"
                  controls
                  playsinline
                  preload="metadata"
-                 class="project-video__frame"
-                 style="background:#000;">
+                 class="project-video__frame">
             Tu navegador no soporta la reproducción de video.
           </video>
         </div>`;
@@ -235,6 +234,7 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     .project-desc p:last-child { margin-bottom: 0; }
 
     /* ── Videos ── */
+    /* YouTube iframes: forzar 16:9 */
     .project-video__wrap {
       position: relative;
       padding-bottom: 56.25%;
@@ -247,6 +247,25 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
       inset: 0;
       width: 100%;
       height: 100%;
+    }
+    /* Videos subidos: respetar aspecto natural del video */
+    .project-video__wrap--native {
+      position: relative;
+      padding-bottom: 0;
+      height: auto;
+      border-radius: 2px;
+      background: #000;
+      display: flex;
+      justify-content: center;
+    }
+    .project-video__wrap--native .project-video__frame {
+      position: static;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 80vh;
+      display: block;
+      border-radius: 2px;
     }
 
     /* ── Prev/Next navigation ── */
