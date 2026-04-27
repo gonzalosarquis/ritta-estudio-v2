@@ -249,12 +249,12 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
       width: 100%;
       height: 100%;
     }
-    /* Videos subidos directo: tamaño natural, ancho limitado */
+    /* Videos subidos directo: 2 por fila en mobile, max 260px en desktop */
     .project-video__wrap--native {
       position: relative;
       padding-bottom: 0;
       height: auto;
-      width: 100%;
+      width: calc(50% - 8px);
       max-width: 260px;
       border-radius: 4px;
       overflow: hidden;
@@ -416,7 +416,7 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     ${videos.length > 0 ? `
     <section style="margin-bottom: 64px;">
       <h2 class="t-section reveal" style="margin-bottom: 24px;">Videos</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
         ${videoItems}
       </div>
     </section>` : ''}
