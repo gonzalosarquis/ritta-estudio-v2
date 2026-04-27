@@ -255,18 +255,17 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
       padding-bottom: 0;
       height: auto;
       width: 100%;
-      max-width: 320px;
+      max-width: 260px;
       border-radius: 4px;
       overflow: hidden;
-      background: #000;
+      flex-shrink: 0;
     }
     .project-video__wrap--native .project-video__frame {
       position: static;
       width: 100%;
       height: auto;
       display: block;
-      max-height: 70vh;
-      object-fit: contain;
+      max-height: 65vh;
     }
 
     /* ── Prev/Next navigation ── */
