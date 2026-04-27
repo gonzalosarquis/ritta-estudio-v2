@@ -234,14 +234,21 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     .project-desc p:last-child { margin-bottom: 0; }
 
     /* ── Videos ── */
-    /* YouTube: ratio 16:9 fijo, se expande en flex */
+    /* Videos: grid de 2 columnas */
+    .video-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      max-width: 600px;
+    }
+    /* YouTube: ocupa las 2 columnas */
     .project-video__wrap {
       position: relative;
       padding-bottom: 56.25%;
       height: 0;
       overflow: hidden;
       border-radius: 4px;
-      flex: 1 1 400px;
+      grid-column: 1 / -1;
     }
     .project-video__frame {
       position: absolute;
@@ -249,23 +256,20 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
       width: 100%;
       height: 100%;
     }
-    /* Videos subidos directo: 2 por fila en mobile, max 260px en desktop */
+    /* Videos subidos: ocupa 1 columna, aspecto natural */
     .project-video__wrap--native {
       position: relative;
       padding-bottom: 0;
       height: auto;
-      width: calc(50% - 8px);
-      max-width: 260px;
       border-radius: 4px;
       overflow: hidden;
-      flex-shrink: 0;
     }
     .project-video__wrap--native .project-video__frame {
       position: static;
       width: 100%;
       height: auto;
       display: block;
-      max-height: 65vh;
+      max-height: 60vh;
     }
 
     /* ── Prev/Next navigation ── */
@@ -416,7 +420,7 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     ${videos.length > 0 ? `
     <section style="margin-bottom: 64px;">
       <h2 class="t-section reveal" style="margin-bottom: 24px;">Videos</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+      <div class="video-grid">
         ${videoItems}
       </div>
     </section>` : ''}
