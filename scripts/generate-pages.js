@@ -97,11 +97,14 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
                class="project-gallery__img">
         </a>`).join('');
 
-  // Videos
+  // Videos — soporta YouTube Y archivos directos
   const videoItems = videos.map(v => {
-    const id = getYouTubeId(v.url_youtube);
-    if (!id) return '';
-    return `
+    const url = v.url_youtube || '';
+    const isYoutube = /youtube\.com|youtu\.be/.test(url);
+    if (isYoutube) {
+      const id = getYouTubeId(url);
+      if (!id) return '';
+      return `
         <div class="project-video__wrap">
           <iframe src="https://www.youtube.com/embed/${id}"
                   title="${escapeHtml(v.titulo || proyecto.titulo)}"
@@ -110,6 +113,21 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
                   allowfullscreen
                   class="project-video__frame"></iframe>
         </div>`;
+    } else {
+      // Video subido directamente (Supabase Storage u otro CDN)
+      return `
+        <div class="project-video__wrap">
+          <video src="${escapeHtml(url)}"
+                 title="${escapeHtml(v.titulo || proyecto.titulo)}"
+                 controls
+                 playsinline
+                 preload="metadata"
+                 class="project-video__frame"
+                 style="background:#000;">
+            Tu navegador no soporta la reproducción de video.
+          </video>
+        </div>`;
+    }
   }).filter(Boolean).join('');
 
   // Prev / Next navigation
