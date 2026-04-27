@@ -263,6 +263,7 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
       height: auto;
       border-radius: 4px;
       overflow: hidden;
+      grid-column: auto;
     }
     .project-video__wrap--native .project-video__frame {
       position: static;
