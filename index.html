@@ -2754,19 +2754,32 @@
 
     async function loadProjectsFromSupabase() {
       try {
-        // Fetch published projects
-        const { data: proyectos, error: proyectosError } = await db
+        // Fetch featured projects (destacado = true), fallback to first 4 by orden
+        let { data: proyectos, error: proyectosError } = await db
           .from('proyectos')
           .select('*')
           .eq('publicado', true)
+          .eq('destacado', true)
           .order('orden', { ascending: true, nullsFirst: false });
+
+        // Fallback: if no featured projects, show first 4 published
+        if (!proyectosError && (!proyectos || proyectos.length === 0)) {
+          const fallback = await db
+            .from('proyectos')
+            .select('*')
+            .eq('publicado', true)
+            .order('orden', { ascending: true, nullsFirst: false })
+            .limit(4);
+          proyectos = fallback.data;
+          proyectosError = fallback.error;
+        }
 
         if (proyectosError) throw proyectosError;
         if (!proyectos || proyectos.length === 0) return;
 
         // Get images for each project
         const projectsWithImages = await Promise.all(
-          proyectos.slice(0, 4).map(async (proyecto) => {
+          proyectos.map(async (proyecto) => {
             const { data: imagenes } = await db
               .from('proyecto_imagenes')
               .select('url')
