@@ -1785,18 +1785,15 @@
           <label for="f-service" class="t-label opacity-40 block mb-2">Servicio de interés</label>
           <select id="f-service" name="service" class="form-field cursor-pointer">
             <option value="">Seleccionar servicio...</option>
-            <option value="Living room design">Living room design</option>
-            <option value="3D rendering">3D rendering</option>
-            <option value="Detailing floorplans and layout">Detailing floorplans and layout</option>
-            <option value="Technical drawing">Technical drawing</option>
-            <option value="Budget planning">Budget planning</option>
-            <option value="Sourcing">Sourcing</option>
-            <option value="Private visits to showrooms &amp; factories">Private visits to showrooms &amp; factories
-            </option>
-            <option value="Author supervision">Author supervision</option>
-            <option value="Supply and logistic management">Supply and logistic management</option>
-            <option value="Space decoration">Space decoration</option>
-            <option value="Consultancy and support">Consultancy and support</option>
+            <option value="Diseño integral de interiores">Diseño integral de interiores</option>
+            <option value="Renderizado 3D">Renderizado 3D</option>
+            <option value="Planos y documentación técnica">Planos y documentación técnica</option>
+            <option value="Dirección de obra">Dirección de obra</option>
+            <option value="Selección de materiales y acabados">Selección de materiales y acabados</option>
+            <option value="Visitas a showrooms y fábricas">Visitas a showrooms y fábricas</option>
+            <option value="Gestión de proveedores">Gestión de proveedores</option>
+            <option value="Decoración y ambientación">Decoración y ambientación</option>
+            <option value="Consultoría y asesoría">Consultoría y asesoría</option>
           </select>
         </div>
 
@@ -1827,6 +1824,22 @@
         </div>
 
       </form>
+
+      <!-- Estado de éxito -->
+      <div id="contact-success" class="hidden" style="display:none; flex-direction:column; justify-content:center; align-items:flex-start; height:100%; padding: 16px 0;">
+        <div style="max-width:360px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--fg);display:flex;align-items:center;justify-content:center;margin-bottom:28px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>
+          </div>
+          <p class="t-label" style="opacity:0.4; margin-bottom:12px;">Mensaje recibido</p>
+          <h2 style="font-size:clamp(22px,3vw,30px);font-weight:400;letter-spacing:-0.02em;line-height:1.2;margin:0 0 16px;">¡Gracias por escribirnos!</h2>
+          <p class="t-body" style="opacity:0.6;line-height:1.65;margin:0 0 32px;">Recibimos tu consulta y nos vamos a poner en contacto con vos en las próximas 24 horas.</p>
+          <button type="button" onclick="document.getElementById('contact-modal').querySelector('[data-contact-close]').click()" class="btn btn-outline">
+            <span class="btn-inner"><span>Cerrar</span><span class="btn-inner-clone" aria-hidden="true"><span>Cerrar</span></span></span>
+          </button>
+        </div>
+      </div>
+
       </div><!-- /contact-modal__form-wrap -->
     </div><!-- /contact-modal__panel -->
   </div><!-- /contact-modal -->
@@ -2582,6 +2595,14 @@
         contactModal.classList.remove('open');
         contactModal.setAttribute('aria-hidden', 'true');
         updateBodyScrollLock();
+        // Reset success state
+        const successEl = document.getElementById('contact-success');
+        const form = document.getElementById('contact-form');
+        if (successEl && form) {
+          successEl.style.display = 'none';
+          successEl.classList.add('hidden');
+          form.style.display = '';
+        }
         if (lastContactTrigger && typeof lastContactTrigger.focus === 'function') {
           lastContactTrigger.focus();
         }
@@ -2642,14 +2663,10 @@
 
           if (response.ok) {
             form.reset();
-            submitBtn.querySelector('span span').textContent = '✓ Mensaje enviado';
-            submitBtn.disabled = false;
-            msgEl.textContent = '¡Mensaje enviado! Nos contactaremos contigo en breve.';
-            msgEl.classList.remove('hidden');
-            setTimeout(() => {
-              msgEl.classList.add('hidden');
-              submitBtn.querySelector('span span').textContent = 'Enviar consulta';
-            }, 6000);
+            form.style.display = 'none';
+            const successEl = document.getElementById('contact-success');
+            successEl.style.display = 'flex';
+            successEl.classList.remove('hidden');
           } else {
             throw new Error('Error al enviar');
           }
