@@ -1632,23 +1632,19 @@
 
       </div>
 
-      <!-- FILA 2: 4 stats en columnas con separadores verticales -->
-      <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 reveal reveal-d1"
+      <!-- FILA 2: 3 stats en columnas con separadores verticales -->
+      <div class="stats-grid grid grid-cols-1 sm:grid-cols-3 reveal reveal-d1"
         style="border-top: 1px solid var(--border);">
         <div class="stat-cell">
-          <div id="site-stat-1-num" class="stat-num" data-count="10" data-suffix="+">10+</div>
+          <div id="site-stat-1-num" class="stat-num" data-count="4" data-suffix="+">4+</div>
           <div id="site-stat-1-label" class="stat-label">años de experiencia</div>
         </div>
         <div class="stat-cell">
-          <div id="site-stat-2-num" class="stat-num" data-count="212" data-suffix="+">212+</div>
+          <div id="site-stat-2-num" class="stat-num" data-count="10" data-suffix="+">10+</div>
           <div id="site-stat-2-label" class="stat-label">proyectos completados</div>
         </div>
         <div class="stat-cell">
-          <div id="site-stat-3-num" class="stat-num" data-count="12" data-suffix="+">12+</div>
-          <div id="site-stat-3-label" class="stat-label">premios de diseño</div>
-        </div>
-        <div class="stat-cell">
-          <div id="site-stat-4-num" class="stat-num" data-count="10" data-suffix="+">10+</div>
+          <div id="site-stat-4-num" class="stat-num" data-count="8" data-suffix="+">8+</div>
           <div id="site-stat-4-label" class="stat-label">miembros del equipo</div>
         </div>
       </div>
@@ -2995,8 +2991,8 @@
         set('site-about-text1', c['about.text1']);
         set('site-about-text2', c['about.text2']);
 
-        // Stats
-        for (let n = 1; n <= 4; n++) {
+        // Stats (1, 2, 4 — stat 3 removed)
+        for (const n of [1, 2, 4]) {
           const num    = c[`stats.${n}_num`];
           const suffix = c[`stats.${n}_suffix`] ?? '+';
           const label  = c[`stats.${n}_label`];
