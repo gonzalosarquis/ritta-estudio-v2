@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { name, email, phone, message } = req.body;
+    const { name, email, phone, service, message } = req.body;
 
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -21,6 +21,7 @@ module.exports = async function handler(req, res) {
       name: name.trim(),
       email: email.trim(),
       phone: phone ? phone.trim() : null,
+      service: service ? service.trim() : null,
       message: message.trim(),
       status: 'nuevo',
       created_at: new Date().toISOString()
@@ -180,6 +181,12 @@ function buildEmailHtml(data, dateStr) {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
                 <tr><td style="padding-bottom:4px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#bbb;">Teléfono</p></td></tr>
                 <tr><td style="border-bottom:1px solid #ebebeb;padding-bottom:14px;"><a href="tel:${data.phone}" style="font-size:14px;color:#111;text-decoration:none;">${data.phone}</a></td></tr>
+              </table>` : ''}
+
+              ${data.service ? `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+                <tr><td style="padding-bottom:4px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#bbb;">Servicio de interés</p></td></tr>
+                <tr><td style="border-bottom:1px solid #ebebeb;padding-bottom:14px;"><p style="margin:0;font-size:14px;color:#111;">${data.service}</p></td></tr>
               </table>` : ''}
 
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
