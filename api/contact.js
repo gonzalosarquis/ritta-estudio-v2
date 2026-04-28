@@ -1,7 +1,7 @@
 /**
  * Serverless function to handle contact form submissions
- * Sends email via Formspree (required)
- * Saves to Supabase contacts table (optional — skipped if credentials missing)
+ * Sends a branded HTML email via Resend
+ * Saves to Supabase contacts table (optional)
  */
 
 module.exports = async function handler(req, res) {
@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
-    // 1. Save to Supabase (optional — don't fail if creds are missing)
+    // 1. Save to Supabase (optional)
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
@@ -45,31 +45,163 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 2. Send email via Formspree (required)
-    const formspreeUrl = process.env.FORMSPREE_ENDPOINT;
+    // 2. Send branded email via Resend
+    const resendKey = process.env.RESEND_API_KEY;
 
-    if (!formspreeUrl) {
-      console.error('Missing FORMSPREE_ENDPOINT env var');
+    if (!resendKey) {
+      console.error('Missing RESEND_API_KEY env var');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    const formspreeResponse = await fetch(formspreeUrl, {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-AR', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva consulta — RITTA Estudio</title>
+</head>
+<body style="margin:0;padding:0;background:#e8e4de;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#e8e4de;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:0 0 24px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <p style="margin:0;font-size:13px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#1a1814;">·ritta· ESTUDIO</p>
+                  </td>
+                  <td align="right">
+                    <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#8a857e;">Nueva consulta</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background:#f1efeb;border:1px solid #d7d2cb;">
+
+              <!-- Card header -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:36px 40px 28px;border-bottom:1px solid #e0ddd8;">
+                    <p style="margin:0 0 6px;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#9c968f;">Recibiste una consulta</p>
+                    <h1 style="margin:0;font-size:22px;font-weight:500;letter-spacing:-0.02em;color:#1a1814;line-height:1.2;">${contactData.name}</h1>
+                    <p style="margin:6px 0 0;font-size:12px;color:#9c968f;">${dateStr}</p>
+                  </td>
+                </tr>
+
+                <!-- Fields -->
+                <tr>
+                  <td style="padding:28px 40px 0;">
+
+                    <!-- Email -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                      <tr>
+                        <td style="padding-bottom:4px;">
+                          <p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9c968f;">Email</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="border-bottom:1px solid #e0ddd8;padding-bottom:12px;">
+                          <a href="mailto:${contactData.email}" style="font-size:14px;color:#1a1814;text-decoration:none;">${contactData.email}</a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    ${contactData.phone ? `
+                    <!-- Teléfono -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+                      <tr>
+                        <td style="padding-bottom:4px;">
+                          <p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9c968f;">Teléfono</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="border-bottom:1px solid #e0ddd8;padding-bottom:12px;">
+                          <a href="tel:${contactData.phone}" style="font-size:14px;color:#1a1814;text-decoration:none;">${contactData.phone}</a>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+
+                    <!-- Mensaje -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+                      <tr>
+                        <td style="padding-bottom:8px;">
+                          <p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9c968f;">Mensaje</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background:#ebe8e2;padding:16px 18px;">
+                          <p style="margin:0;font-size:14px;line-height:1.65;color:#1a1814;">${contactData.message.replace(/\n/g, '<br>')}</p>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+
+                <!-- CTA -->
+                <tr>
+                  <td style="padding:0 40px 36px;">
+                    <a href="mailto:${contactData.email}?subject=Re: Tu consulta a RITTA Estudio"
+                       style="display:inline-block;background:#1a1814;color:#f1efeb;font-size:12px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;padding:14px 28px;">
+                      Responder a ${contactData.name.split(' ')[0]}
+                    </a>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 0 0;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9c968f;letter-spacing:0.06em;">RITTA Estudio · Buenos Aires, Argentina</p>
+              <p style="margin:4px 0 0;font-size:11px;color:#b5b0a9;">rittaestudio@gmail.com</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>`;
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Authorization': `Bearer ${resendKey}`
       },
       body: JSON.stringify({
-        name: contactData.name,
-        email: contactData.email,
-        phone: contactData.phone || '',
-        message: contactData.message
+        from: 'RITTA Estudio <onboarding@resend.dev>',
+        to: ['rittaestudio@gmail.com'],
+        reply_to: contactData.email,
+        subject: `Nueva consulta de ${contactData.name} — RITTA Estudio`,
+        html
       })
     });
 
-    if (!formspreeResponse.ok) {
-      const error = await formspreeResponse.text();
-      console.error('Formspree error:', error);
+    if (!resendResponse.ok) {
+      const error = await resendResponse.text();
+      console.error('Resend error:', error);
       return res.status(500).json({ error: 'Error sending email' });
     }
 
