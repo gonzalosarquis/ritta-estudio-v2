@@ -1,10 +1,10 @@
 /**
  * Serverless function to handle contact form submissions
- * Saves to Supabase and sends email via Formspree
+ * Sends email via Formspree (required)
+ * Saves to Supabase contacts table (optional — skipped if credentials missing)
  */
 
 module.exports = async function handler(req, res) {
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -12,12 +12,10 @@ module.exports = async function handler(req, res) {
   try {
     const { name, email, phone, message } = req.body;
 
-    // Validate required fields
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Prepare contact data
     const contactData = {
       name: name.trim(),
       email: email.trim(),
@@ -27,36 +25,31 @@ module.exports = async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
-    // 1. Save to Supabase
+    // 1. Save to Supabase (optional — don't fail if creds are missing)
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials');
-      return res.status(500).json({ error: 'Server configuration error' });
+    if (supabaseUrl && supabaseKey) {
+      try {
+        await fetch(`${supabaseUrl}/rest/v1/contacts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          },
+          body: JSON.stringify(contactData)
+        });
+      } catch (e) {
+        console.error('Supabase save failed (non-fatal):', e);
+      }
     }
 
-    const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/contacts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`
-      },
-      body: JSON.stringify(contactData)
-    });
-
-    if (!supabaseResponse.ok) {
-      const error = await supabaseResponse.text();
-      console.error('Supabase error:', error);
-      // Don't fail if Supabase fails, try Formspree
-    }
-
-    // 2. Send email via Formspree
+    // 2. Send email via Formspree (required)
     const formspreeUrl = process.env.FORMSPREE_ENDPOINT;
 
     if (!formspreeUrl) {
-      console.error('Missing Formspree endpoint');
+      console.error('Missing FORMSPREE_ENDPOINT env var');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
@@ -80,11 +73,7 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'Error sending email' });
     }
 
-    // Success
-    return res.status(200).json({
-      success: true,
-      message: 'Message sent successfully'
-    });
+    return res.status(200).json({ success: true });
 
   } catch (error) {
     console.error('Contact form error:', error);
