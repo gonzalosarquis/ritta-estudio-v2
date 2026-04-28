@@ -140,85 +140,70 @@ function buildEmailHtml(data, dateStr) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nueva consulta — RITTA Estudio</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f4f4;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:48px 16px;">
+<body style="margin:0;padding:0;background:#ffffff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:48px 24px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
 
           <!-- Header -->
           <tr>
-            <td style="padding:0 0 20px 0;">
+            <td style="padding:0 0 24px 0;border-bottom:2px solid #111;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td><p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#111;">·RITTA· ESTUDIO</p></td>
-                  <td align="right"><p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#999;">Nueva consulta</p></td>
+                  <td><p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#111;">·RITTA· ESTUDIO</p></td>
+                  <td align="right"><p style="margin:0;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#999;">Nueva consulta</p></td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Card -->
+          <!-- Card header -->
           <tr>
-            <td style="background:#ffffff;border:1px solid #e5e5e5;">
-              <table width="100%" cellpadding="0" cellspacing="0">
+            <td style="padding:32px 0 24px;border-bottom:1px solid #ebebeb;">
+              <p style="margin:0 0 10px;font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#bbb;">Recibiste una consulta</p>
+              <h1 style="margin:0;font-size:26px;font-weight:300;letter-spacing:-0.02em;color:#111;line-height:1.2;">${data.name}</h1>
+              <p style="margin:8px 0 0;font-size:12px;color:#bbb;">${dateStr}</p>
+            </td>
+          </tr>
 
-                <!-- Accent bar -->
-                <tr>
-                  <td style="background:#111;height:3px;font-size:0;line-height:0;">&nbsp;</td>
-                </tr>
+          <!-- Fields -->
+          <tr>
+            <td style="padding:24px 0 0;">
 
-                <!-- Card header -->
-                <tr>
-                  <td style="padding:36px 40px 28px;border-bottom:1px solid #efefef;">
-                    <p style="margin:0 0 8px;font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#aaa;">Recibiste una consulta</p>
-                    <h1 style="margin:0;font-size:24px;font-weight:400;letter-spacing:-0.02em;color:#111;line-height:1.2;">${data.name}</h1>
-                    <p style="margin:6px 0 0;font-size:12px;color:#bbb;">${dateStr}</p>
-                  </td>
-                </tr>
-
-                <!-- Fields -->
-                <tr>
-                  <td style="padding:28px 40px 0;">
-
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-                      <tr><td style="padding-bottom:4px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;">Email</p></td></tr>
-                      <tr><td style="border-bottom:1px solid #efefef;padding-bottom:14px;"><a href="mailto:${data.email}" style="font-size:14px;color:#111;text-decoration:none;">${data.email}</a></td></tr>
-                    </table>
-
-                    ${data.phone ? `
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-                      <tr><td style="padding-bottom:4px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;">Teléfono</p></td></tr>
-                      <tr><td style="border-bottom:1px solid #efefef;padding-bottom:14px;"><a href="tel:${data.phone}" style="font-size:14px;color:#111;text-decoration:none;">${data.phone}</a></td></tr>
-                    </table>` : ''}
-
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
-                      <tr><td style="padding-bottom:8px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;">Mensaje</p></td></tr>
-                      <tr><td style="background:#f9f9f9;border-left:2px solid #ddd;padding:14px 18px;"><p style="margin:0;font-size:14px;line-height:1.7;color:#333;">${data.message.replace(/\n/g, '<br>')}</p></td></tr>
-                    </table>
-
-                  </td>
-                </tr>
-
-                <!-- CTA -->
-                <tr>
-                  <td style="padding:0 40px 40px;">
-                    <a href="mailto:${data.email}?subject=Re: Tu consulta a RITTA Estudio"
-                       style="display:inline-block;background:#111;color:#fff;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;padding:14px 28px;">
-                      Responder a ${data.name.split(' ')[0]}
-                    </a>
-                  </td>
-                </tr>
-
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+                <tr><td style="padding-bottom:4px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#bbb;">Email</p></td></tr>
+                <tr><td style="border-bottom:1px solid #ebebeb;padding-bottom:14px;"><a href="mailto:${data.email}" style="font-size:14px;color:#111;text-decoration:none;">${data.email}</a></td></tr>
               </table>
+
+              ${data.phone ? `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+                <tr><td style="padding-bottom:4px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#bbb;">Teléfono</p></td></tr>
+                <tr><td style="border-bottom:1px solid #ebebeb;padding-bottom:14px;"><a href="tel:${data.phone}" style="font-size:14px;color:#111;text-decoration:none;">${data.phone}</a></td></tr>
+              </table>` : ''}
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+                <tr><td style="padding-bottom:8px;"><p style="margin:0;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#bbb;">Mensaje</p></td></tr>
+                <tr><td style="border-top:1px solid #ebebeb;border-bottom:1px solid #ebebeb;padding:16px 0;"><p style="margin:0;font-size:14px;line-height:1.75;color:#333;">${data.message.replace(/\n/g, '<br>')}</p></td></tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding-bottom:40px;">
+              <a href="mailto:${data.email}?subject=Re: Tu consulta a RITTA Estudio"
+                 style="display:inline-block;background:#111;color:#fff;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;text-decoration:none;padding:15px 32px;">
+                Responder a ${data.name.split(' ')[0]}
+              </a>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 0 0;text-align:center;">
-              <p style="margin:0;font-size:11px;color:#bbb;letter-spacing:0.06em;">RITTA Estudio · Buenos Aires, Argentina</p>
-              <p style="margin:4px 0 0;font-size:11px;color:#ccc;">rittaestudio.com.ar</p>
+            <td style="border-top:1px solid #ebebeb;padding-top:20px;">
+              <p style="margin:0;font-size:11px;color:#ccc;letter-spacing:0.06em;">RITTA Estudio · Buenos Aires, Argentina · rittaestudio.com.ar</p>
             </td>
           </tr>
 
