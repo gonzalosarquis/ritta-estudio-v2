@@ -87,7 +87,7 @@ async function trySendResend(apiKey, data) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        from: 'RITTA Estudio <onboarding@resend.dev>',
+        from: 'RITTA Estudio <notificaciones@rittaestudio.com.ar>',
         to: ['rittaestudio@gmail.com'],
         reply_to: data.email,
         subject: `Nueva consulta de ${data.name} — RITTA Estudio`,
