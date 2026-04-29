@@ -536,7 +536,7 @@
        STATS GRID
     ════════════════════════════════════════════ */
     .stat-num {
-      font-size: clamp(32px, 3.5vw, 48px);
+      font-size: clamp(24px, 5vw, 48px);
       font-weight: 300;
       line-height: 1;
       letter-spacing: -0.03em;
@@ -552,56 +552,31 @@
       line-height: 1.5;
     }
 
-    /* Stats grid */
+    /* Stats grid — 3 columnas en todas las pantallas */
     .stats-grid {
       border-top: 1px solid #d0cdc8;
     }
 
-    /* Mobile 2×2 */
-    .stat-cell:nth-child(1) {
-      padding: 32px 24px 32px 0;
-      border-right: 1px solid #d0cdc8;
-      border-bottom: 1px solid #d0cdc8;
-    }
-
-    .stat-cell:nth-child(2) {
-      padding: 32px 0 32px 24px;
-      border-bottom: 1px solid #d0cdc8;
-    }
-
-    .stat-cell:nth-child(3) {
-      padding: 32px 24px 32px 0;
+    .stat-cell {
+      padding: 28px 16px;
       border-right: 1px solid #d0cdc8;
     }
 
-    .stat-cell:nth-child(4) {
-      padding: 32px 0 32px 24px;
+    .stat-cell:last-child {
+      border-right: none;
     }
 
-    /* Desktop 4 col */
     @media (min-width: 1024px) {
-      .stat-cell:nth-child(1) {
-        padding: 48px 64px 48px 0;
-        border-right: 1px solid #d0cdc8;
-        border-bottom: none;
+      .stat-cell {
+        padding: 48px 64px;
       }
 
-      .stat-cell:nth-child(2) {
-        padding: 48px 64px 48px 64px;
-        border-right: 1px solid #d0cdc8;
-        border-bottom: none;
+      .stat-cell:first-child {
+        padding-left: 0;
       }
 
-      .stat-cell:nth-child(3) {
-        padding: 48px 64px 48px 64px;
-        border-right: 1px solid #d0cdc8;
-        border-bottom: none;
-      }
-
-      .stat-cell:nth-child(4) {
-        padding: 48px 0 48px 64px;
-        border-right: none;
-        border-bottom: none;
+      .stat-cell:last-child {
+        padding-right: 0;
       }
     }
 
@@ -1635,7 +1610,7 @@
       </div>
 
       <!-- FILA 2: 3 stats en columnas con separadores verticales -->
-      <div class="stats-grid grid grid-cols-1 sm:grid-cols-3 reveal reveal-d1"
+      <div class="stats-grid grid grid-cols-3 reveal reveal-d1"
         style="border-top: 1px solid var(--border);">
         <div class="stat-cell">
           <div id="site-stat-1-num" class="stat-num" data-count="4" data-suffix="+">4+</div>
