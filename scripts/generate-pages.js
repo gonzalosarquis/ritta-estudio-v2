@@ -366,7 +366,7 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
     <nav class="project-breadcrumb" aria-label="Breadcrumb">
       <a href="/">Inicio</a>
       <span class="project-breadcrumb__sep">/</span>
-      <a href="/proyectos.html">Proyectos</a>
+      <a href="/proyectos">Proyectos</a>
       <span class="project-breadcrumb__sep">/</span>
       <span class="project-breadcrumb__current">${escapeHtml(proyecto.titulo)}</span>
     </nav>
@@ -437,7 +437,7 @@ function buildProjectContent(proyecto, imagenes, videos, allProyectos) {
 
 <!-- Back to projects -->
 <div style="text-align:center; padding: 64px clamp(16px,5vw,48px);">
-  <a href="/proyectos.html" class="btn btn-solid">
+  <a href="/proyectos" class="btn btn-solid">
     <span class="btn-inner">
       <span><span class="btn-dot" aria-hidden="true"></span> Ver todos los proyectos</span>
       <span class="btn-inner-clone" aria-hidden="true">

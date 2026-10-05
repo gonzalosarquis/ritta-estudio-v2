@@ -1,8 +1,15 @@
 {
   "buildCommand": "npm install && npm run generate",
   "outputDirectory": ".",
+  "redirects": [
+    { "source": "/taller.html",     "destination": "/taller",     "permanent": true },
+    { "source": "/proyectos.html",  "destination": "/proyectos",  "permanent": true },
+    { "source": "/formulario.html", "destination": "/formulario", "permanent": true }
+  ],
   "rewrites": [
-    { "source": "/taller",        "destination": "/taller.html" },
+    { "source": "/taller",          "destination": "/taller.html" },
+    { "source": "/proyectos",       "destination": "/proyectos.html" },
+    { "source": "/formulario",      "destination": "/formulario.html" },
     { "source": "/admin",         "destination": "https://admin-ritta.vercel.app/admin" },
     { "source": "/admin/",        "destination": "https://admin-ritta.vercel.app/admin/" },
     { "source": "/admin/:path*",  "destination": "https://admin-ritta.vercel.app/admin/:path*" },
