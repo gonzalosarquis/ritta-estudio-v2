@@ -212,14 +212,15 @@
             <li><span class="k">Valor</span><span class="v">$80.000 por persona</span></li>
           </ul>
 
-          <div class="cta">
+          <div class="cta" id="taller-cta">
             <a class="btn btn-solid" target="_blank" rel="noopener noreferrer"
               href="https://wa.me/5491167445500?text=Hola!%20Quiero%20anotarme%20al%20taller%20%22Dise%C3%B1ar%20para%20habitar%22%20del%20s%C3%A1bado%2024%2F10.">
               Reservar mi lugar
             </a>
             <a class="btn btn-outline" href="#temas">Qué vamos a ver</a>
           </div>
-          <p class="label scarcity">Cupos limitados</p>
+          <p class="label scarcity" id="taller-cupos">Cupos limitados</p>
+          <p class="lead" id="taller-fin" hidden>Este taller ya se realizó. Seguinos en <a href="https://instagram.com/rittaestudio" target="_blank" rel="noopener noreferrer"><b>@rittaestudio</b></a> para enterarte del próximo.</p>
         </div>
       </section>
     </div>
@@ -261,7 +262,7 @@
       </section>
     </div>
 
-    <section class="close">
+    <section class="close" id="taller-close">
       <p>Un espacio para ayudarte<b>a pensar tu casa antes de empezar.</b></p>
       <a class="btn" target="_blank" rel="noopener noreferrer"
         href="https://wa.me/5491167445500?text=Hola!%20Quiero%20anotarme%20al%20taller%20%22Dise%C3%B1ar%20para%20habitar%22%20del%20s%C3%A1bado%2024%2F10.">
@@ -276,6 +277,18 @@
       <a href="https://instagram.com/rittaestudio" target="_blank" rel="noopener noreferrer">@rittaestudio</a>
     </div>
   </footer>
+
+<script>
+    // Pasado el evento (sáb 24/10/2026, 14:00 hs AR) se reemplaza la reserva por un aviso de cierre
+    (function () {
+      if (Date.now() <= new Date('2026-10-24T14:00:00-03:00').getTime()) return;
+      ['taller-cta', 'taller-cupos', 'taller-close'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.remove();
+      });
+      document.getElementById('taller-fin').hidden = false;
+      document.title = 'Taller "Diseñar para habitar" (finalizado) | RITTA Estudio';
+    })();
+  </script>
 
 </body>
 
