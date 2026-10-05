@@ -2,6 +2,7 @@
   "buildCommand": "npm install && npm run generate",
   "outputDirectory": ".",
   "rewrites": [
+    { "source": "/taller",        "destination": "/taller.html" },
     { "source": "/admin",         "destination": "https://admin-ritta.vercel.app/admin" },
     { "source": "/admin/",        "destination": "https://admin-ritta.vercel.app/admin/" },
     { "source": "/admin/:path*",  "destination": "https://admin-ritta.vercel.app/admin/:path*" },
